@@ -1,0 +1,18 @@
+README: Scripts
+
+Scripts named like *_nb.py are jupyter notebooks that have been converted to plain
+python scripts using jupytext.
+
+To view scripts as Jupyter Notebooks:
+
+1) Install jupytext (available on pip, conda)
+2) (Optional) Create an .ipynb file by calling `jupytext --to notebook <script>.py`
+3) Start a jupyter server and navigate to the file in the web UI
+4) Click on the file. It will automatically open the .py file as a notebook if you click on it,
+although it will still save as plain text (as opposed to storing the output of cells).
+If you chose to create an .ipynb file, it will automatically pair them and keep them in sync.
+
+You can even edit the .py file in a text editor, and then refresh the view to see the changes
+without losing your variables.
+Turn off autosave in the jupyter view if you want to edit the .py file to avoid getting
+out of sync. 

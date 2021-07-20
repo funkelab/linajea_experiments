@@ -1,0 +1,34 @@
+{
+  "data_dir": "../data/140521",
+  "zarr_file": "140521.n5",
+  "tracks_file": "extended_tracks.txt",
+  "daughter_cells_file": "daughter_cells.txt",
+  "division_tracks_file": "division_tracks.txt",
+  "train_input_shape": [
+    7,
+    60,
+    148,
+    148
+  ],
+  "predict_input_shape": [
+    7,
+    80,
+    260,
+    260
+  ],
+  "setup_dir": "setup09_shift_divisions_train_early",
+  "shift": true,
+  "divisions": true,
+  "exclude_times": [
+    [
+      225,
+      275
+    ],
+    [
+      400,
+      450
+    ]
+  ],
+  "constant_upsample": false,
+  "average_vectors": false
+}

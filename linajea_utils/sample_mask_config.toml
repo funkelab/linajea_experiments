@@ -1,0 +1,8 @@
+input_file = "140521.zarr"
+output_file = "140521/140521.zarr"
+times = [0, 1]
+dataset = 'raw'
+sigma = [1, 2, 2]
+min_percentile = 1
+downsample = 100
+min_mean_distance = 0.4

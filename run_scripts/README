@@ -1,0 +1,37 @@
+README: Lineage Tree Prediction and Evaluation
+
+Step 1: Network Prediction of Cell Indicators and Parent Vectors
+On bsub cluster in an environment with daisy and numpy installed:
+    python 01_predict_blockwise.py <config file> <iteration>
+NOTE: the predict_blockwise function in the main linajea repository is created
+for the Janelia cluster. Adjustments will be necessary to run in another
+compute environment.
+
+All other steps assume a conda environment with linajea and its dependencies
+installed. Alternatively, a singularity or docker container can be used.
+
+Step 2: Extract Edge Candidates
+    python 02_extract_edges.py <config_file>
+
+Step 3: Solve for Lineage Tree Predictions
+    python 03_solve.py <config file>
+Note: You need a Gurobi license for the machine you are using. 
+
+On CPU cluster for grid search:
+a) create a json or toml file containing the solver parameters that you want to grid search
+b) run: python write_grid_search_files.py <config_file> <grid_search_params> <output_directory>
+    config_file is the base config file to get the rest of the values you aren't grid searching from
+    grid_search_params is the json file containing solver parameters you want to grid search
+    config_directory is the directory to write the resulting config files in. Overwrites existing
+        files with the same names as the new configurations (integers 1 through n).
+c) Use your cluster syntax to run a job per configuration. Recommended not
+    to run more than 50 at a time, to avoid overwhelming the MongoDB with
+    writes. It can be more efficient to write the configs into groups of 50 using
+    the --group-size parameter and run one job per group of 50, where the solver
+    solves all configs in a directory simultaneously.
+
+Step 4: Evaluate
+On local machine with Gurobi license:
+    python 04_evaluate.py <config_file>
+
+(For evaluating the results of a grid search, this can also be paralellized with one job per config file)

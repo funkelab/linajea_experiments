@@ -1,0 +1,9 @@
+README: Training
+
+Step 1: Make Networks 
+python mknet_<organism>.py  --config <config file>
+
+Step 2: Train Model
+On a computer with at least 1 GPU and 5 cores:
+python train_<organism>.py --config <config file> --iterations 400000
+

@@ -1,0 +1,38 @@
+[general]
+setup = "setup211_simple_train_side_2"
+iteration = 400000
+sample = "120828"
+db_host = "localhost"
+db_name = "linajea_120828_setup211_simple_eval_side_1_400000"
+data_dir = "../data"
+setups_dir = "../unet_setups"
+
+[predict]
+cell_score_threshold = 0.4
+num_workers = 16
+
+[extract_edges]
+edge_move_threshold = 25
+block_size = [ 7, 500, 500, 500,]
+num_workers = 32
+use_pv_distance = true
+
+[solve]
+block_size = [ 5, 500, 500, 500,]
+context = [ 2, 100, 100, 100,]
+num_workers = 8
+from_scratch = false
+track_cost = 1.35
+max_cell_move = 25
+selection_constant = -0.425
+weight_node_score = -0.1
+weight_edge_score = 0.0425
+version = 'v1.3-dev'
+
+[evaluate]
+gt_db_name = "linajea_120828_gt_side_1"
+from_scratch = true
+matching_threshold = 15
+sparse = true
+validation_score = false
+window_size = 200

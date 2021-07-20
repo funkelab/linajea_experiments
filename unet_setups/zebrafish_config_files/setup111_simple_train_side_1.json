@@ -1,0 +1,27 @@
+{
+  "data_dir": "../data/160328",
+  "zarr_file": "160328.n5",
+  "exclude_times": [
+    150,
+    200
+  ],
+  "train_input_shape": [
+    7,
+    124,
+    124,
+    124
+  ],
+  "predict_input_shape": [
+    7,
+    156,
+    156,
+    156
+  ],
+  "setup_dir": "setup111_simple_train_side_1",
+  "shift": false,
+  "divisions": false,
+  "tracks_file": "tracks_side_1.txt",
+  "daughter_cells_file": "daughter_cells_side_1.txt",
+  "constant_upsample": true,
+  "average_vectors": false
+}

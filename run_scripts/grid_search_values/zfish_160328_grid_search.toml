@@ -1,0 +1,4 @@
+track_cost = [1.5, 1.6, 1.7, 1.8]
+selection_constant = [-0.7, -0.8, -0.9, -1.0]
+weight_node_score = [-0.02, -0.03, -0.04, -0.05]
+weight_edge_score = [0.04, 0.05, 0.06, 0.07]

@@ -1,0 +1,40 @@
+[general]
+setup = "setup11_simple_train_early"
+iteration = 400000
+sample = "140521"
+frames = [ 225, 275,]
+db_host = "localhost"
+db_name = "linajea_140521_setup11_simple_middle_2_400000"
+data_dir = "../data"
+setups_dir = "../unet_setups"
+data_file = "140521.n5"
+
+[predict]
+cell_score_threshold = 0.4
+num_workers = 20
+processes_per_worker = 10
+
+[extract_edges]
+edge_move_threshold = 40
+block_size = [ 5, 500, 500, 500,]
+num_workers = 32
+use_pv_distance = true
+
+[solve]
+block_size = [ 5, 500, 500, 500,]
+context = [ 2, 100, 100, 100,]
+num_workers = 8
+from_scratch = false
+max_cell_move = 40
+track_cost = 0.6
+selection_constant = -0.25
+weight_node_score = -0.02
+weight_edge_score = 0.02
+version = 'v1.3-dev'
+
+[evaluate]
+matching_threshold = 20
+gt_db_name = "linajea_140521_gt_middle"
+sparse = true
+from_scratch = true
+validation_score = false

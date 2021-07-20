@@ -1,0 +1,58 @@
+README: Linajea Data Storage and Preprocessing
+
+
+STANDARD DATA FORMAT
+
+/linajea_experiments/01_data/<sample #>
+ - SPM0*_TM000***<CM0*_CHN0*>.klb (optional)
+ - attributes.json (optional)
+ - <sample #>.n5
+ -> tracks/
+    - tracks.txt:                               t   z   y   z   cell_id parent_id   track_id
+    - tracks_side_1.txt (optional)
+    - tracks_side_2.txt (optional)
+    - daughter_cells.txt:                       only cells after a division
+    - daugher_cells_side_1.txt (optional)
+    - daughter_cells_side_2.txt (optional)
+    - division_tracks.txt (optional):           include if daughter_cells come from separate track 
+                                                annotations than tracks.txt
+    -> original/                                original annotations from Keller lab in various formats
+ -> TGMM/
+    -> original/
+    -> tgmm.txt
+ -> divisions/
+    -> original/                                original annotations from Keller lab in various formats
+    - divisions.txt
+    - <individual frame numbers>
+
+Raw Data:
+
+Originally, the data was stored in .klb format. Training can be done directly
+from these KLBs. However, we chose to convert the datasets to zarr/n5 format,
+which we find much easier to work with. The zebrafish data was also converted
+into isotropic resolution ((3, 3, 3) compared to the original (6, 1, 1) and
+stored this way to avoid re-computing on the fly. 
+
+Track Annotations:
+
+The original annotations as recieved from the Keller lab are in
+/linajea_experiments/01_data/<sample #>/tracks/original/. The data arrived in different
+formats for each sample, and different preprocessing was done to clean up and reformat the tracks
+into a tab separated value text file, with columns t, z, y, x, cell_id, parent_id, track_id.
+This text file is stored as tracks.txt in /linajea_experiments/01_data/<sample #>/tracks/ 
+If appropriate, the tracks were separated into two disjoint sets of tracks that don't cross the center line
+of the organism, stored as tracks_side_1.txt and tracks_side_2.txt in the same folder.
+
+Additionally, in order to test sampling from divisions more frequently, we created files 
+division_tracks.txt and daugher_cells.txt in the tracks folder.
+
+
+DATA MANIPULATION AND PREPROCESSING
+
+There are a number of python scripts in the /linajea_experiments/01_data folder that can
+be used to preprocess, manipulate, or gather statistics about the data. 
+ 
+The file "interpolate_and_split_data.py" is the script used to read in an xml file,
+interpolate to caclulcate any missing time points, fit a PCA model to split the tracks
+into two sides, and then write to a txt file. It has some dependencies that are not required
+anywhere else, including a library Leo Guignard made to store tracks. See comments in code for more info.

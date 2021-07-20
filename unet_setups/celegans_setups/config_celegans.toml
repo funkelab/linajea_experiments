@@ -1,0 +1,153 @@
+[general]
+# error   40
+# warning 30
+# info    20
+# debug   10
+logging = 20
+debug = false
+db_host = "localhost"
+output_zarr_prefix = "linajea_experiments"
+
+[data]
+voxel_size = [1, 5, 1, 1]
+train_data_dirs = [
+                'data_celegans/mskcc_emb'
+                ]
+test_data_dirs = [
+               'data_celegans/mskcc_emb1'
+               ]
+frames = [0, 370]
+cell_move_radius = 21
+
+[model]
+train_input_shape = [
+    7,
+    40,
+    148,
+    148
+  ]
+predict_input_shape = [
+    7,
+    80,
+    260,
+    260
+  ]
+num_fmaps = 12
+fmap_inc_factors = 3
+downsample_factors = [[1, 2, 2], [1, 2, 2], [2, 2, 2]]
+kernel_size_down = [[3, 3], [3, 3], [3, 3], [3, 3]]
+kernel_size_up = [[3, 3], [3, 3], [3, 3]]
+# kernel_size_down = [[[1, 1, 3, 3], [1, 1, 3, 3]],
+#                     [[1, 1, 3, 3], [1, 1, 3, 3]],
+#                     [[3, 3, 3, 3], [3, 3, 3, 3]],
+#                     [[3, 3, 3, 3], [3, 3, 3]]]
+# kernel_size_up = [[[1, 3, 3], [1, 3, 3]],
+#                   [[1, 3, 3], [1, 3, 3]],
+#                   [[3, 3, 3], [3, 3, 3]]]
+constant_upsample = false
+average_vectors = false
+nms_window_shape = [3, 7, 7]
+
+[training]
+# radius for binary map -> *2
+parent_radius = [0.1, 8.0, 8.0, 8.0]
+# sigma for Gauss -> ~*4 (5 in z -> in 3 slices)
+rasterize_radius = [0.1, 5.0, 3.0, 3.0]
+reject_empty_prob = 0.9
+# default/None, minmax, mean, median
+normalization = 'minmax'
+perc_min = 'perc0_01'
+perc_max = 'perc99_99'
+# norm_min = 100
+# norm_max = 5000
+norm_min = 2000
+norm_max = 7500
+shift = false
+divisions = false
+dense_gt = true
+cache_size = 40
+num_workers = 10
+checkpoints = 1000
+snapshots = 1000
+profiling = 10
+iterations = 1000
+parent_vectors_loss_transition = 50000
+
+[postprocessing]
+frames = [0, 370]
+limit_to_roi_offset = [16, 0, 0, 0]
+limit_to_roi_shape = [20, 150, 512, 512]
+limit_to_roi_hard = false
+
+[prediction]
+iteration = 1000
+cell_score_threshold = 0.3
+write_zarr = false
+write_cells_db = true
+num_workers = 4
+
+[extract_edges]
+block_size = [5, 512, 512, 512]
+num_workers = 32
+frame_context = 1
+# edge_move_threshold = 15
+[extract_edges.edge_move_threshold]
+15 = 50
+50 = 40
+200 = 30
+1000 = 20
+
+[solve]
+model_type = 'nms'
+cost_appear = 1e10
+cost_disappear = 1e5
+cost_split = 0
+threshold_split_score = -1
+threshold_node_score = 0.35
+weight_node_score = 100
+weight_node_state = 100
+threshold_edge_score = 0.5
+weight_distance_cost = 0
+weight_prediction_distance_cost = 1
+block_size = [5, 512, 512, 512]
+context = [2, 100, 100, 100]
+num_workers = 8
+from_scratch = true
+use_cell_state = false
+[solve.threshold_node_state]
+normal = 0.4
+mother = 0.4
+daughter = 0.4
+
+[ilp]
+solve_context = [2, 100, 100, 100]
+
+[evaluation]
+gt_db_name = "linajea_celegans_emb1_gt_0_370"
+from_scratch = true
+matching_threshold = 10
+sparse = true
+
+[optimizer]
+lr = 0.5e-4
+
+[training.augmentation.elastic]
+control_point_spacing = [10, 25, 25]
+jitter_sigma = [1,1,1]
+rotation_min = -90
+rotation_max = 90
+subsample = 8
+
+[training.augmentation.shift]
+prob_slip = 0.3
+prob_shift = 0.3
+sigma = [0, 4, 4, 4]
+
+[training.augmentation.intensity]
+scale = [0.9, 1.1]
+shift = [-0.001, 0.001]
+
+[training.augmentation.simple]
+mirror = [1, 2, 3]
+transpose = [2, 3]
+
