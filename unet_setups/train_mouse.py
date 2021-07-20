@@ -123,7 +123,7 @@ def train_until(
     snapshot_request.add(maxima, output_size_2)
     print("Snapshot request: %s" % str(snapshot_request))
 
-    if data_file.endswith(".zarr"):
+    if data_file.endswith(".zarr") or data_file.endswith(".n5"):
         logging.info(
             os.path.join(
                 data_dir,
@@ -151,6 +151,15 @@ def train_until(
     else:
         raise NotImplementedError("Data must end with .klb or .zarr, got %s"
                                   % data_file)
+
+    if exclude_times:
+        random_location = RandomLocationExcludeTime(
+            raw=raw,
+            time_interval=exclude_times,
+            ensure_nonempty=center_tracks)
+    else:
+        random_location = gp.RandomLocation(ensure_nonempty=center_tracks)
+
     sources = (merge_sources(
             data_dir,
             source,
@@ -158,10 +167,7 @@ def train_until(
             center_tracks,
             tracks_file,
             tracks_file) +
-        RandomLocationExcludeTime(
-            raw=raw,
-            time_interval=exclude_times,
-            ensure_nonempty=center_tracks))
+        random_location)
     if divisions:
         div_sources = (merge_sources(
                 data_dir,
