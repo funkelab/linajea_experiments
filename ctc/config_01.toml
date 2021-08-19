@@ -1,0 +1,37 @@
+[general]
+setup = "setup211_simple_ctc"
+iteration = 100000
+sample = ""
+db_host = "mongodb://localhost"
+db_name = "Fluo-N3DL-DRO_test_01"
+data_dir = "data"
+setups_dir = "."
+data_file = "test_01.n5"
+voxel_size=[1, 5, 1, 1]
+version='ctc'
+
+[predict]
+cell_score_threshold = 0.4
+num_workers = 1
+processes_per_worker = 10
+output_zarr = 'test01_cell_indicators.n5'
+local = true
+
+[extract_edges]
+edge_move_threshold = 25
+block_size = [ 5, 500, 500, 500,]
+num_workers = 10
+
+[solve]
+block_size = [ 5, 500, 500, 500,]
+context = [ 2, 100, 100, 100,]
+num_workers = 1
+from_scratch = false
+track_cost = 1.4
+selection_constant = -0.35
+weight_node_score = 0.0
+weight_edge_score = 0.0375
+
+[evaluate]
+matching_threshold = 20
+sparse = true
