@@ -1,13 +1,18 @@
 #!/bin/bash
 
 DATADIR="data" # location to store n5s and mongo db files
-IMAGE="linajea:v1.3.img"
+IMAGE="linajea_ctc.img"
 OUTDIR="ctc_result" # location for final CTC results 
 # OUTDIR="../Fluo-N3DL-DRO/01_RES"
 PATH_TO_TRAIN="Fluo-N3DL-DRO-train" # path to ctc training data folder
 PATH_TO_TEST="Fluo-N3DL-DRO-test" # path to ctc test data folder
 GUROBI_LIC="gurobi.lic"  # optional (defaults to Scip solver if no gurobi license file found, but results may vary)
 
+# We use singularity containers to package the dependencies of our method
+# You must install singularity (https://singularity.hpcng.org/) to run this script
+# Singularity containers can be run by docker, but this alternative is not included here
+# This script was tested with singularity version 2.6.1 (https://github.com/hpcng/singularity/releases/tag/2.6.1)
+# version 2.6 installation docs are here: https://singularity.hpcng.org/admin-docs/2.6/admin_quickstart.html
 SINGULARITY_EXEC="singularity exec -B $DATADIR -B $PWD $IMAGE -B $GUROBI_LIC:/opt/gurobi.lic" # remove gurobi binding if no license file
 SINGULARITY_EXEC_NV="singularity exec --nv -B $DATADIR"
 
