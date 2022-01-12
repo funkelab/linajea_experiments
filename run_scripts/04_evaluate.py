@@ -24,8 +24,14 @@ if __name__ == "__main__":
                         help='checkpoint to process')
     parser.add_argument('--validation', action="store_true",
                         help='use validation data?')
-    parser.add_argument('--param_id', type=int, default=None,
+    parser.add_argument('--validate_on_train', action="store_true",
+                        help='validate on train data?')
+    parser.add_argument('--val_param_id', type=int, default=None,
+                        help='get test parameters from validation parameters_id')
+    parser.add_argument('--param_id', default=None,
                         help='process parameters with parameters_id')
+    parser.add_argument('--param_list_idx', type=str, default=None,
+                        help='only eval parameters[idx] in config')
     args = parser.parse_args()
 
     start_time = time.time()

@@ -22,6 +22,8 @@ if __name__ == "__main__":
                         help='checkpoint/iteration to predict')
     parser.add_argument('--validation', action="store_true",
                         help='use validation data?')
+    parser.add_argument('--validate_on_train', action="store_true",
+                        help='validate on train data?')
     args = parser.parse_args()
 
     start_time = time.time()
