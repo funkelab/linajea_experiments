@@ -8,7 +8,9 @@ import glob
 import networkx as nx
 import numpy as np
 
-from linajea import CandidateDatabase
+from linajea import (CandidateDatabase,
+                     checkOrCreateDB)
+from linajea.config import TrackingConfig
 import daisy
 
 logging.basicConfig(
@@ -52,17 +54,47 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--dir', type=str,
                         help='path to files')
-    parser.add_argument('--db_name', type=str,
+    parser.add_argument('--db_name', type=str, default=None,
                         help='db_name')
-    parser.add_argument('--gt_db_name', type=str,
+    parser.add_argument('--gt_db_name', type=str, default=None,
                         help='gt db_name')
-    parser.add_argument('--db_host', type=str,
-                        default="mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin?replicaSet=rsLinajea",
-                        help='db host')
+    # parser.add_argument('--db_host', type=str,
+    #                     default="mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin?replicaSet=rsLinajea",
+    #                     help='db host')
+    parser.add_argument('--config', type=str,
+                        help='path to config file')
     parser.add_argument('--debug', type=int, default=None,
                         help='limit number of blocks written')
+    parser.add_argument('--validation', action="store_true",
+                        help='use validation data?')
     args = parser.parse_args()
+    config = TrackingConfig.from_file(os.path.abspath(args.config))
+    if args.validation:
+        roi = config.validate_data.data_sources[0].roi
+        sample = config.validate_data.data_sources[0]
+        checkpoint = config.validate_data.checkpoints[0]
+        cell_score_threshold = config.validate_data.cell_score_threshold
+    else:
+        roi = config.test_data.data_sources[0].roi
+        sample = config.test_data.data_sources[0]
+        checkpoint = config.test_data.checkpoint
+        cell_score_threshold = config.test_data.cell_score_threshold
+    if args.db_name is None:
+        db_name = checkOrCreateDB(
+            config.general.db_host,
+            config.general.setup_dir,
+            sample.datafile.filename,
+            checkpoint,
+            cell_score_threshold,
+            tag=config.general.tag)
+    else:
+        db_name = args.db_name
+    if args.gt_db_name is None:
+        gt_db_name = sample.gt_db_name
+    else:
+        gt_db_name = args.gt_db_name
 
+    logger.info("dbs %s %s", db_name, gt_db_name)
     logger.info("loading features...")
     feature_blocks = {}
     feature_files = list(glob.glob(os.path.join(args.dir, "features_*")))
@@ -72,9 +104,9 @@ if __name__ == "__main__":
         feature_blocks.setdefault(block_id, {})
 
     for fl in feature_files:
-        fl = os.path.basename(fl)
-        block_id = int(fl.split("_")[-1][1:])
-        kind = fl.split("features_")[-1].rsplit("_", 1)[0]
+        fn = os.path.basename(fl)
+        block_id = int(fn.split("_")[-1][1:])
+        kind = fn.split("features_")[-1].rsplit("_", 1)[0]
         with open(fl, 'r') as f:
             for ln in f:
                 idx, val = ln.split()
@@ -87,7 +119,7 @@ if __name__ == "__main__":
                 # exit()
     print("Block IDs:", sorted(feature_blocks.keys()))
     ind_cntr = 0
-    with open("features.txt", 'w') as f:
+    with open(os.path.join(args.dir, "features.txt"), 'w') as f:
         for bidx, block_id in enumerate(sorted(feature_blocks.keys())):
             if args.debug is not None and bidx >= args.debug:
                 break
@@ -126,15 +158,15 @@ if __name__ == "__main__":
         constraint_blocks.setdefault(block_id, [])
 
     for fl in constraint_files:
-        fl = os.path.basename(fl)
-        block_id = int(fl.split("_")[-1][1:])
-        kind = fl.split("constraints_")[-1].rsplit("_", 1)[0]
+        fn = os.path.basename(fl)
+        block_id = int(fn.split("_")[-1][1:])
+        kind = fn.split("constraints_")[-1].rsplit("_", 1)[0]
         with open(fl, 'r') as f:
             for ln in f:
                 constraint_blocks[block_id].append(ln)
 
     ind_cntr = 0
-    with open("constraints.txt", 'w') as f:
+    with open(os.path.join(args.dir, "constraints.txt"), 'w') as f:
         for bidx, block_id in enumerate(sorted(constraint_blocks.keys())):
             if args.debug is not None and bidx >= args.debug:
                 break
@@ -154,9 +186,11 @@ if __name__ == "__main__":
 
     logger.info("loading indicators...")
     logger.info("...nodes")
-    roi = daisy.Roi(offset=[0, 0, 0, 0], shape=[9999, 9999, 9999, 9999])
-    db_graph = CandidateDatabase(args.db_name, args.db_host, mode='r')[roi]
-    gt_db_graph = CandidateDatabase(args.gt_db_name, args.db_host, mode='r')[roi]
+    # roi = daisy.Roi(offset=[0, 0, 0, 0], shape=[9999, 9999, 9999, 9999])
+
+    roi_d = daisy.Roi(offset=roi.offset, shape=roi.shape)
+    db_graph = CandidateDatabase(db_name, config.general.db_host, mode='r')[roi_d]
+    gt_db_graph = CandidateDatabase(gt_db_name, config.general.db_host, mode='r')[roi_d]
     graph_blocks = {}
     # best_effort_blocks = {}
 
@@ -170,9 +204,9 @@ if __name__ == "__main__":
         # best_effort_blocks.setdefault(block_id, {})
 
     for fl in node_files:
-        fl = os.path.basename(fl)
-        block_id = int(fl.split("_")[-1][1:])
-        kind = fl.rsplit("_", 1)[0]
+        fn = os.path.basename(fl)
+        block_id = int(fn.split("_")[-1][1:])
+        kind = fn.rsplit("_", 1)[0]
         with open(fl, 'r') as f:
             for ln in f:
                 idx, val = ln.split()
@@ -197,9 +231,9 @@ if __name__ == "__main__":
 
 
     for fl in edge_files:
-        fl = os.path.basename(fl)
-        block_id = int(fl.split("_")[-1][1:])
-        kind = fl.rsplit("_", 1)[0]
+        fn = os.path.basename(fl)
+        block_id = int(fn.split("_")[-1][1:])
+        kind = fn.rsplit("_", 1)[0]
         with open(fl, 'r') as f:
             for ln in f:
                 n1, n2, val = ln.split()
@@ -218,6 +252,50 @@ if __name__ == "__main__":
                        (n2_prob_gt_cell_id, n1_prob_gt_cell_id) in gt_db_graph.edges():
                         # print("found gt edge {} {}".format(n1_prob_gt_cell_id, n2_prob_gt_cell_id))
                         graph_blocks[block_id].add_edge(n1, n2)
+
+
+    ind_cntr = 0
+    ind_type = {}
+    for bidx, block_id in enumerate(sorted(node_blocks.keys())):
+        if args.debug is not None and bidx >= args.debug:
+            break
+
+        nodes = node_blocks[block_id]
+        for nidx, node in nodes.items():
+            idx = node.indicator["node_selected"] + ind_cntr
+            ind_type[idx] = "node_selected"
+            idx = node.indicator["node_appear"] + ind_cntr
+            ind_type[idx] = "node_appear"
+            idx = node.indicator["node_disappear"] + ind_cntr
+            ind_type[idx] = "node_disappear"
+            idx = node.indicator["node_split"] + ind_cntr
+            ind_type[idx] = "node_split"
+            idx = node.indicator["node_child"] + ind_cntr
+            ind_type[idx] = "node_child"
+            idx = node.indicator["node_continuation"] + ind_cntr
+            ind_type[idx] = "node_continuation"
+
+        ind_cntr += len(feature_blocks[block_id])
+        print(ind_cntr)
+
+    ind_cntr = 0
+    for bidx, block_id in enumerate(sorted(edge_blocks.keys())):
+        if args.debug is not None and bidx >= args.debug:
+            break
+
+        edges = edge_blocks[block_id]
+        for eidx, edge in edges.items():
+            idx = edge.indicator["edge_selected"] + ind_cntr
+            ind_type[idx] = "edge_selected"
+
+        ind_cntr += len(feature_blocks[block_id])
+        print(ind_cntr)
+
+    logger.info("writing indicator types...")
+    with open(os.path.join(args.dir, "indicators.txt"), 'w') as f:
+        for i in range(ind_cntr):
+            # print(i, ind_type[i])
+            f.write("{}\n".format(ind_type[i]))
 
 
     print(sorted(graph_blocks.keys()))
@@ -335,9 +413,10 @@ if __name__ == "__main__":
     print("cnt_edge_selected {}".format(cnt_edge_selected))
 
     logger.info("writing best effort...")
-    with open("best_effort.txt", 'w') as f:
+    with open(os.path.join(args.dir, "best_effort.txt"), 'w') as f:
         for i in range(ind_cntr):
             if i in best_effort:
                 f.write("1\n")
+                # f.write("{}\n".format(best_effort[i]))
             else:
                 f.write("0\n")

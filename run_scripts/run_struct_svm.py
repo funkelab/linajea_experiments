@@ -32,7 +32,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
 
-    # simple ILP to chose exactly one indiciator variable
 
     features = np.loadtxt("features.txt").T
     logger.info("features %s", features.shape)
