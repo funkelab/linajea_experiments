@@ -380,21 +380,21 @@ def create_network(input_shape, name, config):
                                               output_type=tf.int32), axis=0),
                 tf.uint8)
 
-    opt = getattr(tf.train, config.optimizer.optimizer)(
-        *config.optimizer.get_args(),
-        **config.optimizer.get_kwargs())
+    opt = getattr(tf.train, config.optimizerTF1.optimizer)(
+        *config.optimizerTF1.get_args(),
+        **config.optimizerTF1.get_kwargs())
     iteration = tf.Variable(1.0, name='training_iteration', trainable=False)
 
 
-    if config.train.parent_vectors_loss_transition:
+    if config.train.parent_vectors_loss_transition_offset:
         # smooth transition from training parent vectors on complete cell mask to
         # only on maxima
         # https://www.wolframalpha.com/input/?i=1.0%2F(1.0+%2B+exp(0.01*(-x%2B20000)))+x%3D0+to+40000
         alpha = tf.constant(1.0)/(
             tf.constant(1.0) + tf.exp(
-                tf.constant(0.0005) *
+                tf.constant(config.train.parent_vectors_loss_transition_factor) *
                 (-iteration +
-                 tf.cast(tf.constant(config.train.parent_vectors_loss_transition),
+                 tf.cast(tf.constant(config.train.parent_vectors_loss_transition_offset),
                          tf.float32))
             )
         )
@@ -418,7 +418,7 @@ def create_network(input_shape, name, config):
                           parent_vectors_loss_cell_mask),
         tf.summary.scalar('cell_indicator_loss', cell_indicator_loss),
         tf.summary.scalar('loss', loss)]
-    if config.train.parent_vectors_loss_transition:
+    if config.train.parent_vectors_loss_transition_offset:
         scalar_summaries.append(
             tf.summary.scalar('alpha', alpha))
     if config.train.cell_density:
