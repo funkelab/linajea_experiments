@@ -2,10 +2,9 @@
 
 DATADIR="data" # location to store n5s and mongo db files
 IMAGE="linajea_ctc.img"
-OUTDIR="ctc_result" # location for final CTC results 
-# OUTDIR="../Fluo-N3DL-DRO/01_RES"
-PATH_TO_TRAIN="Fluo-N3DL-DRO-train" # path to ctc training data folder
-PATH_TO_TEST="Fluo-N3DL-DRO-test" # path to ctc test data folder
+OUTDIR="../Fluo-N3DL-DRO/01_RES" # location for final CTC results 
+
+PATH_TO_TEST="../Fluo-N3DL-DRO" # path to ctc test data folder
 GUROBI_LIC="gurobi.lic"  # optional (defaults to Scip solver if no gurobi license file found, but results may vary)
 
 # We use singularity containers to package the dependencies of our method
@@ -28,7 +27,7 @@ singularity run --bind $DATADIR:/data/db mongo.img --auth &> mongo.log &
 #./download_and_unzip_ctc_data.sh
 
 # step 2: convert data to n5
-$SINGULARITY_EXEC python convert_to_n5.py $PATH_TO_TRAIN $PATH_TO_TEST $DATADIR -o 1
+$SINGULARITY_EXEC python convert_to_n5.py $DATADIR --test $PATH_TO_TEST -o 1
 
 # step 3: run prediction on GPU, write results to mongo (~2hrs)
 $SINGULARITY_EXEC_NV python predict_blockwise.py config_01.toml -i 100000

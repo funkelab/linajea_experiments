@@ -33,22 +33,22 @@ if __name__ == '__main__':
             format='%(asctime)s %(name)s %(levelname)-8s %(message)s')
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("train", help="Path to training data directory")
-    parser.add_argument("test", help="Path to test data directory")
+    parser.add_argument("--train", help="Path to training data directory", default=None)
+    parser.add_argument("--test", help="Path to test data directory", default=None)
     parser.add_argument("outdir", help="Directory to write output n5 files to")
     parser.add_argument('-o', '--only', default=None)
     args = parser.parse_args()
-
-    if not args.only == '2':
-        convert_to_n5(os.path.join(args.train, '01'),
-                      os.path.join(args.outdir, 'train_01.n5'))
-    if not args.only == '1':
-        convert_to_n5(os.path.join(args.train, '02'),
-                      os.path.join(args.outdir, 'train_02.n5'))
-
-    if not args.only == '2':
-        convert_to_n5(os.path.join(args.test, '01'),
-                      os.path.join(args.outdir, 'test_01.n5'))
-    if not args.only == '1':
-        convert_to_n5(os.path.join(args.test, '02'),
-                      os.path.join(args.outdir, 'test_02.n5'))
+    if args.train is not None:
+        if not args.only == '2':
+            convert_to_n5(os.path.join(args.train, '01'),
+                          os.path.join(args.outdir, 'train_01.n5'))
+        if not args.only == '1':
+            convert_to_n5(os.path.join(args.train, '02'),
+                          os.path.join(args.outdir, 'train_02.n5'))
+    if args.test is not None:
+        if not args.only == '2':
+            convert_to_n5(os.path.join(args.test, '01'),
+                          os.path.join(args.outdir, 'test_01.n5'))
+        if not args.only == '1':
+            convert_to_n5(os.path.join(args.test, '02'),
+                          os.path.join(args.outdir, 'test_02.n5'))
