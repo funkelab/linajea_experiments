@@ -27,6 +27,7 @@ def merge_sources(
         tracks,
         center_tracks,
         track_file,
+        subsampling_seed=42
         ):
     return (
         # raw
@@ -37,14 +38,16 @@ def merge_sources(
                  data_dir,
                  'tracks',
                  track_file),
-             tracks),
+             tracks,
+             subsampling_seed=subsampling_seed),
          # center tracks
          TracksSource(
              os.path.join(
                  data_dir,
                  'tracks',
                  track_file),
-             center_tracks)
+             center_tracks,
+             subsampling_seed=subsampling_seed)
          ) +
         gp.MergeProvider() +
         gp.Pad(tracks, None) +
@@ -61,7 +64,13 @@ def train_until(
         exclude_times,
         shift,
         divisions,
-        snapshot_frequency=1000):
+        snapshot_frequency=1000,
+        subsampling=None,
+        subsampling_seed=42):
+
+    if subsampling is not None:
+        logger.info("using {} subsampling (seed {})".format(subsampling,
+                                                            subsampling_seed))
 
     # Get the latest checkpoint.
     if tf.train.latest_checkpoint(setup_dir):
@@ -183,7 +192,8 @@ def train_until(
             cell_mask,
             array_spec=gp.ArraySpec(voxel_size=voxel_size),
             radius=(0.1, 10, 10, 10),
-            move_radius=10) +
+            move_radius=10,
+            subsampling=subsampling) +
 
         gp.RasterizePoints(
             tracks,
@@ -191,7 +201,8 @@ def train_until(
             array_spec=gp.ArraySpec(voxel_size=voxel_size),
             settings=gp.RasterizationSettings(
                 radius=(0.1, 5, 5, 5),
-                mode='peak')) +
+                mode='peak'),
+            subsampling=subsampling) +
 
         gp.Reject(
                 ensure_nonempty=tracks,
@@ -275,4 +286,6 @@ if __name__ == "__main__":
         config['exclude_times'],
         config['shift'],
         config['divisions'],
-        snapshot_frequency=args.snap_frequency)
+        snapshot_frequency=args.snap_frequency,
+        subsampling=config.get('subsampling'),
+        subsampling_seed=config.get('subsampling_seed', 42))

@@ -27,7 +27,8 @@ def merge_sources(
         tracks,
         center_tracks,
         track_file,
-        center_cell_file
+        center_cell_file,
+        subsampling_seed=42
         ):
     return (
         # raw
@@ -38,14 +39,16 @@ def merge_sources(
                  data_dir,
                  'tracks',
                  track_file),
-             tracks),
+             tracks,
+             subsampling_seed=subsampling_seed),
          # center tracks
          TracksSource(
              os.path.join(
                  data_dir,
                  'tracks',
                  center_cell_file),
-             center_tracks)
+             center_tracks,
+             subsampling_seed=subsampling_seed)
          ) +
         gp.MergeProvider() +
         gp.Pad(tracks, None) +
@@ -63,7 +66,13 @@ def train_until(
         exclude_times,
         shift,
         divisions,
-        snapshot_frequency=1000):
+        snapshot_frequency=1000,
+        subsampling=None,
+        subsampling_seed=42):
+
+    if subsampling is not None:
+        logger.info("using {} subsampling (seed {})".format(subsampling,
+                                                            subsampling_seed))
 
     # Get the latest checkpoint.
     if tf.train.latest_checkpoint(setup_dir):
@@ -124,7 +133,7 @@ def train_until(
     print("Snapshot request: %s" % str(snapshot_request))
 
     if data_file.endswith(".zarr") or data_file.endswith(".n5"):
-        logging.info(
+        logger.info(
             os.path.join(
                 data_dir,
                 data_file))
@@ -156,7 +165,8 @@ def train_until(
         random_location = RandomLocationExcludeTime(
             raw=raw,
             time_interval=exclude_times,
-            ensure_nonempty=center_tracks)
+            ensure_nonempty=center_tracks,
+            subsampling=subsampling)
     else:
         random_location = gp.RandomLocation(ensure_nonempty=center_tracks)
 
@@ -166,7 +176,8 @@ def train_until(
             tracks,
             center_tracks,
             tracks_file,
-            tracks_file) +
+            tracks_file,
+            subsampling_seed=subsampling_seed) +
         random_location)
     if divisions:
         div_sources = (merge_sources(
@@ -175,11 +186,13 @@ def train_until(
                 tracks,
                 center_tracks,
                 division_tracks_file,
-                daughter_cells_file) +
+                daughter_cells_file,
+                subsampling_seed=subsampling_seed) +
             RandomLocationExcludeTime(
                 raw=raw,
                 time_interval=exclude_times,
-                ensure_nonempty=center_tracks))
+                ensure_nonempty=center_tracks,
+                subsampling=subsampling))
 
         sources = (
             (sources, div_sources) +
@@ -212,7 +225,8 @@ def train_until(
             cell_mask,
             array_spec=gp.ArraySpec(voxel_size=voxel_size),
             radius=(0.1, 10, 10, 10),
-            move_radius=10) +
+            move_radius=10,
+            subsampling=subsampling) +
 
         gp.RasterizePoints(
             tracks,
@@ -220,7 +234,8 @@ def train_until(
             array_spec=gp.ArraySpec(voxel_size=voxel_size),
             settings=gp.RasterizationSettings(
                 radius=(0.1, 5, 5, 5),
-                mode='peak')) +
+                mode='peak'),
+            subsampling=subsampling) +
 
         gp.Reject(
                 ensure_nonempty=tracks,
@@ -308,4 +323,6 @@ if __name__ == "__main__":
         config['exclude_times'],
         config['shift'],
         config['divisions'],
-        snapshot_frequency=args.snap_frequency)
+        snapshot_frequency=args.snap_frequency,
+        subsampling=config.get('subsampling'),
+        subsampling_seed=config.get('subsampling_seed', 42))
