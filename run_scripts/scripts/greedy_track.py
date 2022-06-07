@@ -8,10 +8,14 @@ logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s %(name)s %(levelname)-8s %(message)s')
 
+logging.getLogger('linajea.tracking.greedy_track').setLevel(logging.DEBUG)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--db_host', default="localhost")
+    parser.add_argument(
+            '--db_host',
+            default="mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin")
     parser.add_argument('-db', '--db_name', required=True)
     parser.add_argument('-k', '--selected_key', required=True)
     parser.add_argument('-t', '--threshold', default=0)
