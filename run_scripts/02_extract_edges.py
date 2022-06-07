@@ -3,8 +3,7 @@ import argparse
 import logging
 import time
 
-from linajea import (print_time,
-                     getNextInferenceData)
+from linajea import print_time, load_config
 from linajea.process_blockwise import extract_edges_blockwise
 
 
@@ -16,16 +15,15 @@ logger = logging.getLogger(__name__)
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str,
+    parser.add_argument('config_file', type=str,
                         help='path to config file')
-    parser.add_argument('--checkpoint', type=int, default=-1,
-                        help='checkpoint to process')
-    parser.add_argument('--validation', action="store_true",
-                        help='use validation data?')
     args = parser.parse_args()
+    config = load_config(args.config_file)
 
     start_time = time.time()
-    for inf_config in getNextInferenceData(args):
-        extract_edges_blockwise(inf_config)
-    end_time = time.time()
-    print_time(end_time - start_time)
+    extract_edges_config = config['general']
+    extract_edges_config.update(config['extract_edges'])
+    extract_edges_config['frame_context'] = config['solve']['context'][0]
+    start_time = time.time()
+    extract_edges_blockwise(**extract_edges_config)
+    print_time(time.time() - start_time)

@@ -1,26 +1,19 @@
-import os
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
-import warnings
-warnings.filterwarnings("once", category=FutureWarning)
-
 import argparse
 import logging
 import os
 import sys
 
-import gunpowder as gp
 import numpy as np
-import h5py
+import gunpowder as gp
 
-from linajea.gunpowder import WriteCells
+from linajea.gunpowder import (WriteCells, Clip,
+                               NormalizeMinMax, NormalizeMeanStd,
+                               NormalizeMedianMad)
 from linajea.process_blockwise import write_done
-from linajea.config import TrackingConfig
 from linajea import (load_config,
                      construct_zarr_filename)
+
+from util_celegans import checkOrCreateDB
 
 try:
     import absl.logging
@@ -29,18 +22,24 @@ try:
 except Exception as e:
     print(e)
 
-logger = logging.getLogger(__name__)
 
+def write_cells_sample(config, sample, setup_dir):
+    logging.basicConfig(
+        level=config['general']['logging'],
+        handlers=[
+            logging.FileHandler("run.log", mode='a'),
+            logging.StreamHandler(sys.stdout)
+        ],
+        format='%(asctime)s %(name)s %(levelname)-8s %(message)s')
+    logger = logging.getLogger(__name__)
 
-def write_cells_sample(config):
-    net_config = load_config(os.path.join(config.general.setup_dir,
-                                          'test_net_config.json'))
+    net_config = load_config(os.path.join(setup_dir, 'test_net_config.json'))
 
     parent_vectors = gp.ArrayKey('PARENT_VECTORS')
     cell_indicator = gp.ArrayKey('CELL_INDICATOR')
     maxima = gp.ArrayKey('MAXIMA')
 
-    voxel_size = gp.Coordinate(config.inference.data_source.voxel_size)
+    voxel_size = gp.Coordinate(config['data']['voxel_size'])
     output_size = gp.Coordinate(net_config['output_shape_2'])*voxel_size
 
     chunk_request = gp.BatchRequest()
@@ -48,13 +47,8 @@ def write_cells_sample(config):
     chunk_request.add(cell_indicator, output_size)
     chunk_request.add(maxima, output_size)
 
-    sample = config.inference.data_source.datafile.filename
-    data_config = load_config(
-            os.path.join(sample, "data_config.toml"))
-    output_path = construct_zarr_filename(
-        config,
-        config.inference.data_source.datafile.filename,
-        config.inference.checkpoint)
+    data_config = load_config(os.path.join(sample, "data_config.toml"))
+    output_path = construct_zarr_filename(config, sample)
     source = gp.ZarrSource(
         output_path,
         datasets={
@@ -72,20 +66,13 @@ def write_cells_sample(config):
                 interpolatable=False,
                 voxel_size=voxel_size)})
 
-    if os.path.isdir(sample):
-        filename_mask = os.path.join(
-            sample,
-            data_config['general'].get(
-                'mask_file',
-                os.path.splitext(data_config['general']['zarr_file'])[0] + "_mask.hdf"))
-    else:
-        filename_mask = sample + "_mask.hdf"
-
-    with h5py.File(filename_mask, 'r') as f:
-        mask = np.array(f['volumes/mask'])
-    z_range = data_config['general']['z_range']
-    if z_range[1] < 0:
-        z_range[1] = data_config['general']['shape'][1] - z_range[1]
+    cb = []
+    if config['prediction']['write_cells_db']:
+        cb.append(lambda b: write_done(
+            b,
+            'predict_cells',
+            config['general']['db_name'],
+            config['general']['db_host']))
 
     pipeline = (
         source +
@@ -97,11 +84,9 @@ def write_cells_sample(config):
             maxima,
             cell_indicator,
             parent_vectors,
-            score_threshold=config.inference.cell_score_threshold,
-            db_host=config.general.db_host,
-            db_name=config.inference.data_source.db_name,
-            # mask=mask,
-            # z_range=z_range,
+            score_threshold=config['prediction']['cell_score_threshold'],
+            db_host=config['general']['db_host'],
+            db_name=config['general']['db_name'],
             volume_shape=data_config['general']['shape']) +
         gp.PrintProfilingStats(every=100) +
         gp.DaisyRequestBlocks(
@@ -112,11 +97,7 @@ def write_cells_sample(config):
                 maxima: 'write_roi'
             },
             num_workers=5,
-            block_done_callback=lambda b, st, et: write_done(
-                b,
-                'predict_db',
-                config.inference.data_source.db_name,
-                config.general.db_host)
+            block_done_callback=lambda b, st, et: all([f(b) for f in cb])
     ))
 
     with gp.build(pipeline):
@@ -128,8 +109,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str,
                         help='path to config file')
+    parser.add_argument('--sample', type=str,
+                        help='path to sample')
+    parser.add_argument('--iteration', type=int, default=-1,
+                        help='which saved model to use for prediction')
+    parser.add_argument('--setup_dir', type=str,
+                        required=True, help='output')
+    parser.add_argument('--db', type=str, help='db name')
 
     args = parser.parse_args()
 
-    config = TrackingConfig.from_file(args.config)
-    write_cells_sample(config)
+    config = load_config(args.config)
+    if args.iteration > 0:
+        config['prediction']['iteration'] = args.iteration
+    os.makedirs(setup_dir, exist_ok=True)
+    if args.db:
+        config['general']['db_name'] = args.db
+
+    write_cells_sample(config, args.sample, args.setup_dir)
