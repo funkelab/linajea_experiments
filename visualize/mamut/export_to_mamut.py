@@ -93,8 +93,7 @@ if __name__ == "__main__":
         help='Optionally scale coordinates by this factor for export')
     parser.add_argument(
         '--only-matched',
-        type=bool,
-        default=False,
+        action='store_true',
         help='Export only tracks that have been matched to the GT.')
     parser.add_argument(
         '--gt',

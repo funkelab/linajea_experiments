@@ -10,7 +10,8 @@ import os
 logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s %(name)s %(levelname)-8s %(message)s')
-# logging.getLogger(
+logging.getLogger(
+        'linajea.tracking.solver').setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -19,12 +20,15 @@ if __name__ == "__main__":
     parser.add_argument('config', help="config file")
     parser.add_argument('-pd', '--parameters-dir')
     parser.add_argument('-e', '--evaluate', action='store_true')
+    parser.add_argument('-s', '--solve', action='store_true')
     args = parser.parse_args()
 
     config_file = args.config
     config = load_config(config_file)
     arguments = config['general']
     arguments.update(config['solve'])
+    # arguments['num_workers'] = 5
+    # arguments['db_name'] = "linajea_140521_setup11_simple_early_middle_perfect"
 
     if args.parameters_dir:
         parameters = []
@@ -42,6 +46,8 @@ if __name__ == "__main__":
     else:
         parameters = [tracking_params_from_config(config)]
 
+    # parameters = [p for p in parameters if p.weight_edge_score != 0.0]
+
     arguments['parameters'] = parameters
 
     # check for limit to roi
@@ -53,12 +59,15 @@ if __name__ == "__main__":
         arguments['limit_to_roi'] = limit_to_roi
 
     start_time = time.time()
-    solve_blockwise(**arguments)
+    if args.solve:
+        solve_blockwise(**arguments)
     print_time(time.time() - start_time)
 
     if args.evaluate:
         evaluate_args = arguments
+        arguments.update(config['evaluate'])
         for parameter in parameters:
+            logger.info("%s", str(vars(parameter)))
             evaluate_args['parameters'] = parameter
             start_time = time.time()
             linajea.evaluation.evaluate_setup(**evaluate_args)

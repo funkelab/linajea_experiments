@@ -1,5 +1,7 @@
 import linajea.evaluation as lev
 import csv
+from graph_from_csv import graph_from_csv
+import argparse
 
 
 def write_segments(outfile, results_list):
@@ -35,7 +37,7 @@ if __name__ == '__main__':
     setup = 'setup111_simple'
     regions = ['eval_side_1', 'eval_side_2']
     sample = '160328'
-    db_host = "localhost"  # TODO: Replace with MongoDB URL
+    db_host = "mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin"
     # need tgmm, our best result on side 1 and side 2
     # model, gt_edges, fn, is, fp-d, fn-d, sum
     fieldnames = ['model', 'gt_edges', 'fn_edges',

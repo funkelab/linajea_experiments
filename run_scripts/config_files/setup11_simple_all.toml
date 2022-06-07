@@ -2,11 +2,14 @@
 setup = "setup11_simple_train_all"
 iteration = 400000
 sample = "140521"
-db_host = "localhost"
+db_host = "mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin"
 db_name = "linajea_140521_setup11_simple_all_400000"
+singularity_image = "linajea/linajea:v1.3-dev"
+queue = "gpu_rtx"
 data_dir = "../data"
 setups_dir = "../unet_setups"
 data_file = "140521.n5"
+lab = "funke"
 
 [predict]
 cell_score_threshold = 0.4
@@ -31,7 +34,7 @@ weight_edge_score = 0.02
 
 [evaluate]
 matching_threshold = 20
-gt_db_name = "linajea_140521_gt"
+gt_db_name = "linajea_140521_gt_extended"
 sparse = true
 from_scratch = false
 validation_score = false

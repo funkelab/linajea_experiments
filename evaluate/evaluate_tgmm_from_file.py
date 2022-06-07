@@ -2,11 +2,12 @@ from linajea import CandidateDatabase
 from linajea.tracking import TrackGraph
 from linajea.evaluation import evaluate
 from daisy import Roi
+import sys
 import logging
 from networkx import DiGraph
 import time
+import os
 import pymongo
-import argparse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -115,27 +116,22 @@ def evaluate_tgmm(tgmm_graph, gt_db_name, db_host, matching_threshold,
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("tracks_file")
-    parser.add_argument("gt_db_name")
-    parser.add_argument("tgmm_db_name")
-    parser.add_argument("tgmm_id")
-    parser.add_argument("-m", "--matching_threshold", default=15, type="int")
-    parser.add_argument("-f", "--frames", type=int, nargs=2, default=None)
-    args = parser.parse_args()
-    tracks_file = args.tracks_file
-    db_host = "localhost"  # TODO: Replace with MongoDB URL
-    gt_db_name = args.gt_db_name
-    matching_threshold = args.matching_threshold
-    frames = args.frames
-    tgmm_db_name = args.tgmm_db_name
-    tgmm_id = args.tgmm_id
-
+    if len(sys.argv) != 2:
+        print("Usage: python add_gt_to_mongo.py"
+              " <tracks_file>")
+        sys.exit(1)
+    tracks_file = sys.argv[1]
+    db_host = "mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin?replicaSet=rsLinajea",
+    gt_db_name = 'linajea_120828_gt'
+    matching_threshold = 15
+    frames = [0, 300]
     tgmm_graph = get_tgmm_graph(tracks_file, frames=frames)
-    score = evaluate_tgmm(tgmm_graph, gt_db_name, db_host, matching_threshold,
-                          frames=frames)
+    score = evaluate_tgmm(tgmm_graph, gt_db_name, db_host, matching_threshold, frames=frames)
+    fname = os.path.basename(tracks_file)
+    tgmm_id = os.path.splitext(fname)[0]
     logger.info("Done evaluating results for %s. Saving results to mongo."
                 % tgmm_id)
+    tgmm_db_name = 'linajea_120828_tgmm_scores'
     client = pymongo.MongoClient(db_host)
     tgmm_scores_db = client[tgmm_db_name]
     score_collection = tgmm_scores_db['scores']

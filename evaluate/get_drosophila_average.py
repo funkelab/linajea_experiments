@@ -47,7 +47,7 @@ if __name__ == '__main__':
     setup = 'setup211_simple'
     regions = ['eval_side_1', 'eval_side_2']
     sample = '120828'
-    db_host = "localhost"  # TODO: Replace with MongoDB URL
+    db_host = "mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin"
     filter_params = {'version': "v1.3-dev"}
     our_results = []
     greedy_results = []

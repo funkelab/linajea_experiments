@@ -83,7 +83,7 @@ def get_points_in_t(tracksfile, roi):
 
 def get_results(database, roi, key=None, node_score_threshold=None):
     # TODO: add edges as lines going backward in time
-    host = "localhost"
+    host = "mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin?replicaSet=rsLinajea",
     db = CandidateDatabase(database, host, 'r', parameters_id=key)
     if key:
         selected_graph = db.get_selected_graph(roi)

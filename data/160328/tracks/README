@@ -1,2 +1,9 @@
+Track annotations are split into two sets based on the side of the embryo.
+
+tracks_side_1.txt is what Leo labeled the "train_set.txt"
+tracks_side_2.txt is what Leo labeled the "test_set.txt"
+
+I renamed them into two splits or sets because we will be training and testing on both.
+
 Discarded.txt are the tracks that crossed the center line of the embryo, and thus are
 not used for training or testing.

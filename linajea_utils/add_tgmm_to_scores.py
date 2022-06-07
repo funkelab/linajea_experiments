@@ -41,7 +41,8 @@ def evaluate_setups(
         matching_threshold,
         start_frame=None,
         end_frame=None,
-        results_db_name=None):
+        results_db_name=None,
+        window_size=50):
     if start_frame:
         assert(end_frame)
         assert(start_frame < end_frame)
@@ -50,7 +51,7 @@ def evaluate_setups(
     else:
         roi = daisy.Roi((0, 0, 0, 0), (1e10, 1e10, 1e10, 1e10))
 
-    mongo_url = "localhost"  # TODO: Replace with MongoDB URL
+    mongo_url = "mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin"
     tgmm_db = linajea.CandidateDatabase(tgmm_db_name, mongo_url)
     gt_db = linajea.CandidateDatabase(gt_db_name, mongo_url)
 
@@ -70,13 +71,14 @@ def evaluate_setups(
             gt_graph,
             tgmm_graph,
             matching_threshold=matching_threshold,
-            sparse=True)
+            validation_score=False,
+            sparse=True,
+            window_size=window_size)
     logger.info(score)
     logger.info("Writing to mongo")
     if not results_db_name:
         results_db_name = tgmm_db_name
-    write_tgmm_score(results_db_name, mongo_url, score,
-                     start_frame=start_frame, end_frame=end_frame)
+    write_tgmm_score(results_db_name, mongo_url, score, start_frame=start_frame, end_frame=end_frame)
     logger.info("Done writing to mongo")
 
 
@@ -88,6 +90,7 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--start-frame', type=int, default=None)
     parser.add_argument('-e', '--end-frame', type=int, default=None)
     parser.add_argument('-r', '--results-db-name', default=None)
+    parser.add_argument('-w', '--window-size', type=int, default=50)
     args = parser.parse_args()
 
     start_time = time.time()
@@ -97,6 +100,7 @@ if __name__ == "__main__":
             args.matching_threshold,
             start_frame=args.start_frame,
             end_frame=args.end_frame,
-            results_db_name=args.results_db_name)
+            results_db_name=args.results_db_name,
+            window_size=args.window_size)
     end_time = time.time()
     linajea.print_time(end_time - start_time)

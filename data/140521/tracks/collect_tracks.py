@@ -3,9 +3,9 @@ filenames = [
     'original/TB_Extended_corrected.TrackingMatrixGT.csv',
     'original/VE_Extended.shifted.TrackingMatrixGT.csv',
     'original/140521_CM.shifted.trackingMatrixGT.csv',
-    'original/140521_TB.shifted.trackingMatrixGT.csv',
-    'original/140521_DorsalAorta.shifted.trackingMatrixGT.csv',
-    'original/140521_VE.shifted.trackingMatrixGT.csv',
+    # 'original/140521_TB.shifted.trackingMatrixGT.csv',
+    # 'original/140521_DorsalAorta.shifted.trackingMatrixGT.csv',
+    # 'original/140521_VE.shifted.trackingMatrixGT.csv',
     'original/140521_Notochord.shifted.trackingMatrixGT.csv',
 ]
 
@@ -14,7 +14,7 @@ track_ids = set()
 
 cell_id_offset = 0
 
-with open('tracks_uncorrected.txt', 'w') as out:
+with open('extended_tracks_uncorrected.txt', 'w') as out:
 
     for filename in filenames:
 

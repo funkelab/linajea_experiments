@@ -15,7 +15,6 @@ class MatchedEdgesWriter:
     def __init__(
             self,
             db_name,
-            mongo_url,
             tgmm_db_name,
             frames,
             parameters_id,
@@ -23,13 +22,13 @@ class MatchedEdgesWriter:
             basedir,
             matching_threshold=15):
         self.our_track_graph = self._get_tracks(
-                db_name, mongo_url, frames=frames, parameters_id=parameters_id)
+                db_name, frames=frames, parameters_id=parameters_id)
         self.greedy_track_graph = self._get_tracks(
-                db_name, mongo_url, frames=frames, parameters_id='selected_greedy')
+                db_name, frames=frames, parameters_id='selected_greedy')
         self.tgmm_track_graph = self._get_tracks(
-                tgmm_db_name, mongo_url, frames=frames, parameters_id=None)
+                tgmm_db_name, frames=frames, parameters_id=None)
         self.gt_track_graph = self._get_tracks(
-                gt_db_name, mongo_url, frames=frames, parameters_id=None)
+                gt_db_name, frames=frames, parameters_id=None)
 
         self.frames = frames if frames is not None\
             else self.gt_track_graph.get_frames()
@@ -155,7 +154,6 @@ class MatchedEdgesWriter:
     def _get_tracks(
             self,
             db_name,
-            mongo_url,
             frames=None,
             parameters_id=None):
         if frames is not None:
@@ -166,6 +164,7 @@ class MatchedEdgesWriter:
             start_frame = None
             num_frames = None
         roi = daisy.Roi((start_frame, 0, 0, 0), (num_frames, 1e10, 1e10, 1e10))
+        mongo_url = "mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin"
 
         try:
             parameters_id = int(parameters_id)
@@ -281,14 +280,12 @@ if __name__ == "__main__":
     parser.add_argument('tgmm_db_name')
     parser.add_argument('out_dir')
     parser.add_argument('-f', '--frames', type=int, nargs=2, default=None)
-    parser.add_argument('-m', '--mongo_url', default="localhost")
     parser.add_argument('-id', '--parameters_id')
     parser.add_argument('-n', '--gt_node', type=int, default=None)
     parser.add_argument('-t', '--threshold', default=15, type=int)
     args = parser.parse_args()
     writer = MatchedEdgesWriter(
             args.db_name,
-            args.mongo_url,
             args.tgmm_db_name,
             args.frames,
             args.parameters_id,

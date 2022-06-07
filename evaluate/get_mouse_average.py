@@ -1,6 +1,8 @@
 import linajea.evaluation as lev
 import csv
+# from graph_from_csv import graph_from_csv
 import logging
+import argparse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -42,7 +44,7 @@ if __name__ == '__main__':
     vald_regions = ['early', 'middle', 'late']
     sample = '140521'
     filter_params = {'version': 'v1.3-dev'}
-    db_host = "localhost"  # TODO: Replace with MongoDB URL
+    db_host = "mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin"
     our_results = []
     greedy_results = []
     tgmm_results = []
@@ -119,24 +121,24 @@ if __name__ == '__main__':
                     tgmm_dict['fp_divisions'] +
                     tgmm_dict['fn_divisions'])
             tgmm_results.append(tgmm_dict)
-    for result in our_results:
-        result['fn_edges'] = result['fn_edges'] / result['gt_edges']
-        result['identity_switches'] = result['identity_switches'] / result['gt_edges']
-        result['fp_divisions'] = result['fp_divisions'] / result['gt_edges']
-        result['fn_divisions'] = result['fn_divisions'] / result['gt_edges']
-        result['sum'] = result['sum'] / result['gt_edges']
-    for result in greedy_results:
-        result['fn_edges'] = result['fn_edges'] / result['gt_edges']
-        result['identity_switches'] = result['identity_switches'] / result['gt_edges']
-        result['fp_divisions'] = result['fp_divisions'] / result['gt_edges']
-        result['fn_divisions'] = result['fn_divisions'] / result['gt_edges']
-        result['sum'] = result['sum'] / result['gt_edges']
-    for result in tgmm_results:
-        result['fn_edges'] = result['fn_edges'] / result['gt_edges']
-        result['identity_switches'] = result['identity_switches'] / result['gt_edges']
-        result['fp_divisions'] = result['fp_divisions'] / result['gt_edges']
-        result['fn_divisions'] = result['fn_divisions'] / result['gt_edges']
-        result['sum'] = result['sum'] / result['gt_edges']
+    #for result in our_results:
+    #    result['fn_edges'] = result['fn_edges'] / result['gt_edges']
+    #    result['identity_switches'] = result['identity_switches'] / result['gt_edges']
+    #    result['fp_divisions'] = result['fp_divisions'] / result['gt_edges']
+    #    result['fn_divisions'] = result['fn_divisions'] / result['gt_edges']
+    #    result['sum'] = result['sum'] / result['gt_edges']
+    #for result in greedy_results:
+    #    result['fn_edges'] = result['fn_edges'] / result['gt_edges']
+    #    result['identity_switches'] = result['identity_switches'] / result['gt_edges']
+    #    result['fp_divisions'] = result['fp_divisions'] / result['gt_edges']
+    #    result['fn_divisions'] = result['fn_divisions'] / result['gt_edges']
+    #    result['sum'] = result['sum'] / result['gt_edges']
+    #for result in tgmm_results:
+    #    result['fn_edges'] = result['fn_edges'] / result['gt_edges']
+    #    result['identity_switches'] = result['identity_switches'] / result['gt_edges']
+    #    result['fp_divisions'] = result['fp_divisions'] / result['gt_edges']
+    #    result['fn_divisions'] = result['fn_divisions'] / result['gt_edges']
+    #    result['sum'] = result['sum'] / result['gt_edges']
 
     def get_average(results, name):
         average = {'model': name}
@@ -161,3 +163,5 @@ if __name__ == '__main__':
         write_segments('mouse_segments_averaged_greedy.csv', greedy_results)
         writer.writerow(get_average(tgmm_results, 'TGMM'))
         write_segments('mouse_segments_averaged_tgmm.csv', tgmm_results)
+
+        #graph_from_csv(out_file)

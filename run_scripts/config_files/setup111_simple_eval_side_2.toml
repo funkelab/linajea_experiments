@@ -2,10 +2,14 @@
 setup = "setup111_simple_train_side_1"
 iteration = 400000
 sample = "160328"
-db_host = "localhost"
-db_name = "linajea_160328_setup111_simple_eval_side_2_400000"
+db_host = "mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin?replicaSet=rsLinajea"
+db_name = "linajea_160328_setup111_simple_eval_side_2_400000_te"
+prediction_type = "cell_candidates"
+singularity_image = "linajea/linajea:v1.3-dev"
+queue = "gpu_rtx"
 data_dir = "../data"
 setups_dir = "../unet_setups"
+lab = "funke"
 
 [predict]
 cell_score_threshold = 0.47

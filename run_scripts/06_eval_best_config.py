@@ -1,5 +1,8 @@
-from linajea import load_config
+from linajea.process_blockwise import solve_blockwise
+from linajea import print_time, load_config
+from linajea.tracking import TrackingParameters
 import linajea.evaluation
+from daisy import Roi
 import logging
 import time
 import argparse
@@ -7,6 +10,8 @@ import argparse
 logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s %(name)s %(levelname)-8s %(message)s')
+#logging.getLogger(
+#        'linajea.evaluation').setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -46,6 +51,7 @@ if __name__ == "__main__":
 
     evaluate_config = solve_config
     evaluate_config.update(config['evaluate'])
+    #evaluate_config['write_fps'] = evaluate_config['db_name'] + '_fps.txt'
     print("Eval config: %s" % str(evaluate_config))
     start_time = time.time()
     linajea.evaluation.evaluate_setup(**evaluate_config)

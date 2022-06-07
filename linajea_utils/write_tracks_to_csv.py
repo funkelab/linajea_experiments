@@ -81,7 +81,6 @@ def write_points_with_parent_vectors(tracks, out_file):
 
 def get_tracks(
         db_name,
-        mongo_url,
         frames,
         parameters_id):
     if frames is not None:
@@ -95,6 +94,7 @@ def get_tracks(
     # smaller debug roi:
     roi = daisy.Roi((start_frame, 0, 0, 0), (num_frames, 1e10, 1e10, 1e10))
 
+    mongo_url = "mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin"
     db = linajea.CandidateDatabase(
             db_name, mongo_url, parameters_id=parameters_id)
     logger.info("Reading cells and edges in %s" % roi)
@@ -114,7 +114,6 @@ def get_tracks(
 
 def get_best_tracks(
         db_name,
-        mongo_url,
         frames,
         vald_db_name,
         vald_frames):
@@ -127,6 +126,7 @@ def get_best_tracks(
         num_frames = None
 
     roi = daisy.Roi((start_frame, 0, 0, 0), (num_frames, 1e10, 1e10, 1e10))
+    mongo_url = "mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin"
     vald_db = linajea.CandidateDatabase(vald_db_name, mongo_url, 'r')
     scores = vald_db.get_scores(frames=vald_frames,
                                 filters={'version': 'v1.3-dev'})
@@ -153,6 +153,7 @@ def get_best_tracks(
     db = linajea.CandidateDatabase(
             db_name, mongo_url)
     best_id = db.get_parameters_id(best_params, fail_if_not_exists=True)
+    logger.info("using id %d in db %s", best_id, db_name)
     db.set_parameters_id(best_id)
     logger.info("Reading cells and edges in %s" % roi)
     subgraph = db.get_selected_graph(
@@ -168,7 +169,6 @@ def get_best_tracks(
 
 def get_matched_tracks(
         db_name,
-        mongo_url,
         frames,
         parameters_id,
         gt_db_name):
@@ -183,6 +183,7 @@ def get_matched_tracks(
     # smaller debug roi:
     roi = daisy.Roi((start_frame, 0, 0, 0), (num_frames, 1e10, 1e10, 1e10))
 
+    mongo_url = "mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin"
     db = linajea.CandidateDatabase(
             db_name, mongo_url, parameters_id=parameters_id)
     logger.info("Reading cells and edges in %s" % roi)
@@ -249,13 +250,11 @@ if __name__ == "__main__":
     points = args.points
     parameters_id = args.parameters_id
     gt_db_name = args.gt_db_name
-    mongo_url = "localhost"  # TODO: Replace with MongoDB URL
 
     start_time = time.time()
     if args.vald_db_name is not None:
         tracks = get_best_tracks(
                 db_name,
-                mongo_url,
                 args.frames,
                 args.vald_db_name,
                 args.vald_frames)
@@ -263,14 +262,12 @@ if __name__ == "__main__":
     elif gt_db_name is not None:
         tracks = get_matched_tracks(
                 db_name,
-                mongo_url,
                 args.frames,
                 parameters_id,
                 gt_db_name)
     else:
         tracks = get_tracks(
                 db_name,
-                mongo_url,
                 args.frames,
                 parameters_id)
     if tracks is None:

@@ -10,6 +10,8 @@ import argparse
 logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s %(name)s %(levelname)-8s %(message)s')
+# logging.getLogger(
+#         'daisy.persistence.mongodb_graph_provider').setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 

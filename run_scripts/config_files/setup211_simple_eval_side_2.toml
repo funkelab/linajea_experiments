@@ -2,10 +2,14 @@
 setup = "setup211_simple_train_side_1"
 iteration = 400000
 sample = "120828"
-db_host = "localhost"
-db_name = "linajea_120828_setup211_simple_eval_side_2_400000"
+db_host = "mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin"
+db_name = "linajea_120828_setup211_simple_eval_side_2_400000_te"
+singularity_image = "linajea/linajea:v1.3-dev"
+queue = "gpu_rtx"
 data_dir = "../data"
 setups_dir = "../unet_setups"
+data_file = "120828.n5"
+lab = "funke"
 
 [predict]
 cell_score_threshold = 0.4
