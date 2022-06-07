@@ -28,10 +28,17 @@ if __name__ == "__main__":
 
     if args.parameters_dir:
         parameters = []
-        for config_file in os.listdir(args.parameters_dir):
-            parameters.append(tracking_params_from_config(
+        for config_dir in os.listdir(args.parameters_dir):
+            if os.path.isdir(config_dir):
+                for config_file in os.listdir(os.path.join(args.parameters_dir, config_dir)):
+                    parameters.append(tracking_params_from_config(
+                        load_config(os.path.join(args.parameters_dir,
+                                                 config_dir,
+                                                 config_file))))
+            else:
+                parameters.append(tracking_params_from_config(
                     load_config(os.path.join(args.parameters_dir,
-                                config_file))))
+                                             config_dir))))
     else:
         parameters = [tracking_params_from_config(config)]
 
