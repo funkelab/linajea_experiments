@@ -48,8 +48,9 @@ def parse_division_tracks(tracks_file):
                 "Error! Cell has more than two siblings: %d" % parent_id
             assert len(siblings) > 0, \
                 "Error! Cell has no children but should have one: %d" % parent_id
-            assert not(parent_id != -1 and len(siblings) == 2 and len(children) == 2), \
-                "Error! No timepoint between to successive divisions: %d %d" % (parent_id, cell_id)
+            if "unedited" not in tracks_file:
+                assert not(parent_id != -1 and len(siblings) == 2 and len(children) == 2), \
+                    "Error! No timepoint between to successive divisions: %d %d" % (parent_id, cell_id)
 
             if len(children) == 2:
                 out.write(cell.strip() + "\t" + "1" + "\n")

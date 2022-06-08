@@ -2,7 +2,11 @@ from __future__ import print_function
 import argparse
 import logging
 import xml.etree.ElementTree as ET
+
+import numpy as np
+
 from check_ground_truth import (get_edge_distance_stats,
+                                get_min_cell_distance,
                                 check_valid_edges,
                                 check_unattached_points)
 
@@ -14,17 +18,22 @@ def xml_to_track_graph(
         xml_file,
         output_file,
         scale=1.0,
-        frame_limit=None,
+        frame_begin=None,
+        frame_end=None,
         name=False,
         header=False,
-        unattached=False):
+        unattached=False,
+        dry_run=False):
 
     tree = ET.parse(xml_file)
     root = tree.getroot()
 
     cells = {}
     edges = []
+    edge_source_to_target = {}
+    edge_target_counter = {}
 
+    radius_per_frame = {}
     for frame_with_nodes in root.iter('SpotsInFrame'):
         for node in frame_with_nodes.iter('Spot'):
             cell = {}
@@ -34,18 +43,17 @@ def xml_to_track_graph(
                 name = node.attrib['name'].split("_")[-1]
                 cell['name'] = name
             t = int(float(node.attrib['POSITION_T']))
-            if frame_limit is not None and t >= frame_limit:
+            if frame_begin is not None and t < frame_begin:
+                continue
+            if frame_end is not None and t >= frame_end:
                 continue
             x = float(node.attrib['POSITION_X'])*scale
             y = float(node.attrib['POSITION_Y'])*scale
             z = float(node.attrib['POSITION_Z'])*scale
             if 'RADIUS' in node.attrib:
                 cell['radius'] = node.attrib['RADIUS']
-            #     r = node.attrib['RADIUS']
-            # else:
-            #     r = 1.0
+                radius_per_frame.setdefault(t, []).append(float(cell['radius']))
             cell['position'] = (t, z, y, x)
-            # cell['radius'] = r
             cells[_id] = cell
 
     for track in root.iter('Track'):
@@ -59,19 +67,26 @@ def xml_to_track_graph(
                 edge_dict['target'] = target
                 edge_dict['track_id'] = track_id
                 edges.append(edge_dict)
+                edge_source_to_target[source] = target
+                edge_target_counter.setdefault(target, 0)
+                edge_target_counter[target] += 1
 
     print("Found %d cells and %d edges in XML file" % (len(cells), len(edges)))
 
-    # print(cells)
-    # print(edges)
-    get_edge_distance_stats(cells, edges)
+    if "unedited" not in xml_file and "unedited" not in output_file:
+        get_min_cell_distance(cells, edge_source_to_target, edge_target_counter)
+        get_edge_distance_stats(cells, edges)
+    for fr in sorted(radius_per_frame.keys()):
+        print("frame {}, avg radius: {}".format(fr, np.mean(radius_per_frame[fr])))
+
     check_valid_edges(cells, edges)
     unattached = check_unattached_points(cells, edges)
     if not unattached:
         print("removing unattached cells {}".format(unattached))
         for node in unattached:
             del cells[node]
-    write_txt_file(cells, edges, output_file, header=header)
+    if not dry_run:
+        write_txt_file(cells, edges, output_file, header=header)
 
 
 def write_txt_file(cells, edges, txt_file, header=False):
@@ -147,19 +162,20 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=str,
                         help='output file')
     parser.add_argument('--scale', type=float, default=1.0)
-    parser.add_argument("--frame_limit", type=int, help="")
+    parser.add_argument("--frame_limit", type=int, help="",
+                        dest="frame_end")
+    parser.add_argument("--frame_begin", type=int, help="")
     parser.add_argument("--name", action="store_true", help="")
     parser.add_argument("--header", action="store_true", help="")
-    parser.add_argument("-u" "--unattached", action='store_true',
+    parser.add_argument("-u", "--unattached", action='store_true',
                         help="Include unattached nodes")
+    parser.add_argument("--dry_run", action="store_true", help="")
     args = parser.parse_args()
     xml_file = args.xml
     output_file = args.output
     scale = args.scale
-    # only_daughters = args.daughters
-    frame_limit = args.frame_limit
-    print(args)
     xml_to_track_graph(
             xml_file, output_file, scale=scale,
-            frame_limit=frame_limit, name=args.name, header=args.header,
-            unattached=args.unattached)
+            frame_begin=args.frame_begin, frame_end=args.frame_end,
+            name=args.name, header=args.header,
+            unattached=args.unattached, dry_run=args.dry_run)

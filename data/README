@@ -6,7 +6,7 @@ STANDARD DATA FORMAT
 /linajea_experiments/01_data/<sample #>
  - SPM0*_TM000***<CM0*_CHN0*>.klb (optional)
  - attributes.json (optional)
- - <sample #>.n5
+ - <sample #>.zarr
  -> tracks/
     - tracks.txt:                               t   z   y   z   cell_id parent_id   track_id
     - tracks_side_1.txt (optional)
@@ -27,11 +27,21 @@ STANDARD DATA FORMAT
 
 Raw Data:
 
-Originally, the data was stored in .klb format. Training can be done directly
-from these KLBs. However, we chose to convert the datasets to zarr/n5 format,
-which we find much easier to work with. The zebrafish data was also converted
-into isotropic resolution ((3, 3, 3) compared to the original (6, 1, 1) and
-stored this way to avoid re-computing on the fly. 
+The original .klb files are stored in /nrs/keller/light_sheet/<sample #>/*.klb
+One file per time point (except zebrafish with two files per time point, one for each camera)
+The exact filename formats are different for each sample, 
+depending on aquisition and preprocessing steps done by the Keller lab.
+
+To avoid hard coding an external path to the data, we instead expect the data to be accessible
+in /linajea_experiments/01_data/<sample #>/SPM_0*_TM000***.klb. Creating a symbolic link to
+the original files is recommended, rather than copying and renaming (a script to do this
+is described in Data Manipulation and Preprocessing section). 
+
+Alternatively, some of the data (specifically the zebrafish) has been converted
+to zarr format and can be found in <sample #>.zarr. The zebrafish data was
+converted into isotropic resolution and stored this way to avoid re-computing
+on the fly. Note - unless stored in a hierarchical directory structure, this
+zarr format can be slow to access on the Janelia file system.
 
 Track Annotations:
 
@@ -46,13 +56,20 @@ of the organism, stored as tracks_side_1.txt and tracks_side_2.txt in the same f
 Additionally, in order to test sampling from divisions more frequently, we created files 
 division_tracks.txt and daugher_cells.txt in the tracks folder.
 
+Full-Frame Division Annotations:
+
+Original full frame-division annotations from the Keller lab can be found ing
+linajea_experiments/data/<sample #>/divisions/original. They were then
+converted into tab separated value text file, similar to that for the tracks,
+and consquently split into separate files by time frame for easier processing.
+
 
 DATA MANIPULATION AND PREPROCESSING
 
 There are a number of python scripts in the /linajea_experiments/01_data folder that can
 be used to preprocess, manipulate, or gather statistics about the data. 
  
-The file "interpolate_and_split_data.py" is the script used to read in an xml file,
+The file "interpolate_and_split_data.py" is the script used by Leo to read in an xml file,
 interpolate to caclulcate any missing time points, fit a PCA model to split the tracks
 into two sides, and then write to a txt file. It has some dependencies that are not required
-anywhere else, including a library Leo Guignard made to store tracks. See comments in code for more info.
+anywhere else, including a library Leo made to store tracks. See comments in code for more info.

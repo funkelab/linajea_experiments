@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import logging
 import sys
+import scipy.spatial
 
 source_name = 'source'
 target_name = 'target'
@@ -21,29 +22,35 @@ def read_nodes_and_edges(filename):
     nodes = {}
     edges = []
     max_id = -1
-    for line in open(filename):
-        # 0  1  2  3  4        5          6
-        # t, z, y, x, cell_id, parent_id, track_id
-        t, z, y, x, cell_id, parent_id, track_id = line.split()
-        t = int(float(t))
-        z = float(z)
-        y = float(y)
-        x = float(x)
-        cell_id = int(cell_id)
-        parent_id = int(parent_id)
-        track_id = int(track_id)
-        if parent_id > 0:
-            edges.append(
-                {
-                    source_name: cell_id,
-                    target_name: parent_id,
-                })
+    with open(filename, 'r') as fl:
+        # skip header if exists
+        ln = fl.readline()
+        if not "parent" in ln:
+            fl.seek(0)
 
-        nodes[cell_id] = {
-                'position': (t, z, y, x),
-                'id': cell_id,
-            }
-        max_id = max(max_id, cell_id)
+        for line in fl:
+            # 0  1  2  3  4        5          6
+            # t, z, y, x, cell_id, parent_id, track_id
+            t, z, y, x, cell_id, parent_id, track_id = line.split()[:7]
+            t = int(float(t))
+            z = float(z)
+            y = float(y)
+            x = float(x)
+            cell_id = int(cell_id)
+            parent_id = int(parent_id)
+            track_id = int(track_id)
+            if parent_id > 0:
+                edges.append(
+                    {
+                        source_name: cell_id,
+                        target_name: parent_id,
+                    })
+
+            nodes[cell_id] = {
+                    'position': (t, z, y, x),
+                    'id': cell_id,
+                }
+            max_id = max(max_id, cell_id)
     logging.info("%d nodes read" % len(nodes))
     logging.info("%d edges read" % len(edges))
     logging.info("Max cell id is %d" % max_id)
@@ -85,40 +92,72 @@ def get_edge_distance_stats(nodes, edges, histogram=False):
     print("Max distance:", max_distance,
           'source', nodes[longest_edge[source_name]],
           'target', nodes[longest_edge[target_name]])
+    dist_edges = sorted(zip(distances, edges),
+                        key=lambda pair: pair[0],
+                        reverse=True)
+    for d, e in dist_edges:
+        if d > 25:
+            print("distance:", d,
+                  'source', nodes[e[source_name]],
+                  'target', nodes[e[target_name]])
+
     print("Min distance:", min(distances))
-    print("Mean distance:", sum(distances) / len(distances))
+    print("Mean distance:", np.mean(distances))
+    print("Std distance:", np.std(distances))
+    print("Median distance:", np.median(distances))
+    histo = np.histogram(distances, bins=[0, 1, 2, 3, 5, 10, 15, 20, 25, 50, 100])
+    print("Histogram: \n     {}\n{}".format(
+        "".join([str(v).rjust(7) for v in histo[0]]),
+        "".join([str(v).rjust(7) for v in histo[1]])))
     if histogram:
         np_dist = np.array(distances)
-        # np_dist = np_dist[np_dist > 30]
         plt.hist(np_dist, bins=40)
         plt.savefig('edge_distance_stats.png')
 
 
-def get_min_cell_distance(nodes):
+def get_min_cell_distance(nodes, edge_source_to_target, edge_target_counter):
     logger.info("Getting the minimum distance between nodes within a frame")
     frame_to_node = {}
     for id_, node in nodes.items():
         frame = node['position'][0]
         coords = node['position'][1:]
+        idx = node['id']
         if frame not in frame_to_node:
             frame_to_node[frame] = []
-        frame_to_node[frame].append(coords)
+        frame_to_node[frame].append((idx,) + coords)
 
     min_distances = {}
+
     for frame, node_list in frame_to_node.items():
         min_dist = -1
-        node_list = sorted(node_list)
-        for current_index in range(len(node_list) - 1):
-            current = node_list[current_index]
-            for compare_to_index in range(current_index + 1, len(node_list)):
-                compare_to = node_list[compare_to_index]
-                distance = calc_distance(current, compare_to)
+        # node_list = sorted(node_list)
+        node_list = np.array(node_list)
+        coords = node_list[:, 1:]
+        ids = node_list[:, 0]
+        cells_tree = scipy.spatial.cKDTree(coords, leafsize=4)
+        nn_distances, nn_locations = cells_tree.query(coords, k=4)
+        # ignore distance to itself
+        nn_dists = nn_distances[:, 1]
+        if frame != 0:
+            for i, node in enumerate(node_list):
+                node1 = int(node[0])
+                target = edge_source_to_target[node1]
+                if edge_target_counter[target] > 1:
+                    id2 = nn_locations[i, 1]
+                    node2 = node_list[id2][0]
+                    target2 = edge_source_to_target[node2]
+                    if target == target2:
+                        nn_dists[i] = nn_distances[i, 2]
 
-                if min_dist == -1 or distance < min_dist:
-                    min_dist = distance
-                if abs(current[0] - compare_to[0] > min_dist):
-                    break
+        min_dist = min(nn_dists)
+        id1 = list(nn_dists).index(min_dist)
+        if min_dist < 11:
+            id2 = nn_locations[id1, 1]
+            print("very short dist: frame {}, dist {}, cell1 {} cell2 {}".format(
+                frame, min_dist, coords[id1], coords[id2]))
         min_distances[frame] = min_dist
+        print("frame: {} min_dist {:.3f}  min_dist_cum {}".format(
+            frame, min_dist, min(list(min_distances.values()))))
     print("Minimum distance over all frames: %.3f"
           % min(list(min_distances.values())))
     print("Mean minimum distance over frames: %.3f"

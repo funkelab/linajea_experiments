@@ -130,13 +130,13 @@ def add_tracks_to_mongo(tracks_file, db_host, db_name,
                                         parent_cell['y'],
                                         parent_cell['x']])
 
-            fac = 6
-            dz = np.random.randint(-5*fac, 5*fac+1)
-            dy = np.random.randint(-5*fac, 5*fac+1)
-            dx = np.random.randint(-5*fac, 5*fac+1)
-            parent_cell_loc = np.array([parent_cell['z']-dz,
-                                        parent_cell['y']-dy,
-                                        parent_cell['x']-dx])
+            # fac = 6
+            # dz = np.random.randint(-5*fac, 5*fac+1)
+            # dy = np.random.randint(-5*fac, 5*fac+1)
+            # dx = np.random.randint(-5*fac, 5*fac+1)
+            # parent_cell_loc = np.array([parent_cell['z']-dz,
+            #                             parent_cell['y']-dy,
+            #                             parent_cell['x']-dx])
 
 
             parent_vector = parent_cell_loc - cell_loc

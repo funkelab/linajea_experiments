@@ -36,7 +36,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--div_tracks', type=str,
                         help="Path to division tracks file")
-    parser.add_argument('--out', type=str,
+    parser.add_argument('--out', type=str, default=None,
                         help="File to write daughter cells to")
     args = parser.parse_args()
+    if args.out is None:
+        args.out = args.div_tracks.split("div_state.txt")[0] + "daughters.txt"
+
     filter_division_tracks(args.div_tracks, args.out)
