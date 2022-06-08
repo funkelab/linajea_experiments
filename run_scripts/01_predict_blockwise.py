@@ -1,22 +1,33 @@
 from __future__ import absolute_import
-from linajea import print_time
-from linajea.process_blockwise import predict_blockwise
-import logging
 import argparse
+import logging
 import time
+
+from linajea import (print_time,
+                     getNextInferenceData)
+from linajea.process_blockwise import predict_blockwise
+
 
 logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s %(name)s %(levelname)-8s %(message)s')
 logger = logging.getLogger(__name__)
 
-
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("config_file")
-    parser.add_argument("iteration", type=int)
+    parser.add_argument('--config', type=str,
+                        help='path to config file')
+    parser.add_argument('--checkpoint', type=int, default=-1,
+                        help='checkpoint/iteration to predict')
+    parser.add_argument('--validation', action="store_true",
+                        help='use validation data?')
+    parser.add_argument('--validate_on_train', action="store_true",
+                        help='validate on train data?')
     args = parser.parse_args()
+
     start_time = time.time()
-    predict_blockwise(args.config_file, args.iteration)
+    for inf_config in getNextInferenceData(args):
+        predict_blockwise(inf_config)
     end_time = time.time()
     print_time(end_time - start_time)
