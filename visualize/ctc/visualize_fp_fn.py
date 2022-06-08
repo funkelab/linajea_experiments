@@ -25,6 +25,34 @@ def export_db(
         output_dir):
 
     assert end_frame > start_frame
+
+    txt_fn = "man_track.txt"
+    tif_fn = "man_track{:03d}.tif"
+    data_config = linajea.load_config(
+        os.path.join(sample, "data_config.toml"))
+    shape = data_config['general']['shape']
+
+    voxel_size = data_config['general']['resolution']
+    output_dir = os.path.join(output_dir, output_dir)
+
+    def create_graph_and_write_ctc(src_graph, edges, name, gt, nodes=None):
+        trgt_graph = nx.DiGraph()
+        if edges is not None:
+            for edge in edges:
+                trgt_graph.add_node(edge[0], **src_graph.nodes(data=True)[edge[0]])
+                trgt_graph.add_node(edge[1], **src_graph.nodes(data=True)[edge[1]])
+                trgt_graph.add_edge(edge[0], edge[1])
+        if nodes is not None:
+            for node in nodes:
+                trgt_graph.add_node(node, **src_graph.nodes(data=True)[node])
+
+        trgt_graph = linajea.tracking.TrackGraph(trgt_graph, frame_key='t')
+
+        write_ctc(trgt_graph, start_frame, end_frame, shape,
+                  output_dir + name, txt_fn, tif_fn,
+                  voxel_size=voxel_size, gt=gt)
+
+
     roi = daisy.Roi((start_frame, 0, 0, 0),
                     (end_frame - start_frame, 1e10, 1e10, 1e10))
     db_host = "mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin?replicaSet=rsLinajea"
@@ -34,83 +62,57 @@ def export_db(
 
     print("Reading GT cells and edges in %s" % roi)
     gt_subgraph = gt_db[roi]
-    gt_graph = linajea.tracking.TrackGraph(gt_subgraph, frame_key='t')
+    gt_graph = linajea.tracking.TrackGraph(gt_subgraph, frame_key='t', roi=roi)
     gt_tracks = list(gt_graph.get_tracks())
     print("Found %d GT tracks" % len(gt_tracks))
 
     print("Reading cells and edges in %s" % roi)
     rec_subgraph = db.get_selected_graph(roi)
-    rec_graph = linajea.tracking.TrackGraph(rec_subgraph, frame_key='t')
+    rec_graph = linajea.tracking.TrackGraph(rec_subgraph, frame_key='t', roi=roi)
     rec_tracks = list(rec_graph.get_tracks())
     print("Found %d tracks" % len(rec_tracks))
 
     m = linajea.evaluation.match_edges(
         gt_graph, rec_graph,
         matching_threshold=15)
-    (edges_x, edges_y, edge_matches, edge_fps) = m
+    (gt_edges, rec_edges, edge_matches, unselected_potential_matches) = m
+    edge_matches = [(gt_edges[gt_ind], rec_edges[rec_ind])
+                    for gt_ind, rec_ind in edge_matches]
 
-    matched_rec_edges_id = set([match[1] for match in edge_matches])
-    matched_rec_edges = set()
-    for edge_index in matched_rec_edges_id:
-        edge = edges_y[edge_index]
-        matched_rec_edges.add(edge)
-    rec_edges = set(rec_graph.edges)
-    fp_edges = list(rec_edges - matched_rec_edges)
-    rec_track_tp = nx.DiGraph()
-    rec_track_fp = nx.DiGraph()
-    for edge in matched_rec_edges:
-        rec_track_tp.add_node(edge[0], **rec_graph.nodes(data=True)[edge[0]])
-        rec_track_tp.add_node(edge[1], **rec_graph.nodes(data=True)[edge[1]])
-        rec_track_tp.add_edge(edge[0], edge[1])
-    for edge in fp_edges:
-        rec_track_fp.add_node(edge[0], **rec_graph.nodes(data=True)[edge[0]])
-        rec_track_fp.add_node(edge[1], **rec_graph.nodes(data=True)[edge[1]])
-        rec_track_fp.add_edge(edge[0], edge[1])
+    validation_score = False
+    ignore_one_off_div_errors = True
+    fn_div_count_unconnected_parent = False
+    window_size = 270
+    sparse = False
+    evaluator = linajea.evaluation.Evaluator(
+            gt_graph,
+            rec_graph,
+            edge_matches,
+            unselected_potential_matches,
+            sparse=sparse,
+            validation_score=validation_score,
+            window_size=window_size,
+            ignore_one_off_div_errors=ignore_one_off_div_errors,
+            fn_div_count_unconnected_parent=fn_div_count_unconnected_parent)
+    report = evaluator.evaluate()
 
-    rec_track_tp = linajea.tracking.TrackGraph(rec_track_tp, frame_key='t')
-    rec_track_fp = linajea.tracking.TrackGraph(rec_track_fp, frame_key='t')
+    matched_rec_edges = set([match[1] for match in edge_matches])
+    fp_edges = report.fp_edge_list
 
-    matched_gt_edges_id = set([match[0] for match in edge_matches])
-    matched_gt_edges = set()
-    for edge_index in matched_gt_edges_id:
-        edge = edges_x[edge_index]
-        matched_gt_edges.add(edge)
-    gt_edges = set(gt_graph.edges)
-    fn_edges = list(gt_edges - matched_gt_edges)
-    gt_track_tp = nx.DiGraph()
-    gt_track_fn = nx.DiGraph()
-    for edge in matched_gt_edges:
-        gt_track_tp.add_node(edge[0], **gt_graph.nodes(data=True)[edge[0]])
-        gt_track_tp.add_node(edge[1], **gt_graph.nodes(data=True)[edge[1]])
-        gt_track_tp.add_edge(edge[0], edge[1])
-    for edge in fn_edges:
-        gt_track_fn.add_node(edge[0], **gt_graph.nodes(data=True)[edge[0]])
-        gt_track_fn.add_node(edge[1], **gt_graph.nodes(data=True)[edge[1]])
-        gt_track_fn.add_edge(edge[0], edge[1])
+    matched_gt_edges = set([match[0] for match in edge_matches])
+    fn_edges = report.fn_edge_list
 
-    gt_track_tp = linajea.tracking.TrackGraph(gt_track_tp, frame_key='t')
-    gt_track_fn = linajea.tracking.TrackGraph(gt_track_fn, frame_key='t')
 
-    txt_fn = "man_track.txt"
-    tif_fn = "man_track{:03d}.tif"
-    data_config = linajea.load_config(
-        os.path.join(sample, "data_config.toml"))
-    shape = data_config['general']['shape']
-
-    # voxel_size = data_config['general']['resolution']
-    voxel_size = [1, 5, 1, 1]
-    write_ctc(gt_track_tp, start_frame, end_frame, shape,
-              output_dir + "gt_tp", txt_fn, tif_fn,
-              voxel_size=voxel_size, gt=True)
-    write_ctc(gt_track_fn, start_frame, end_frame, shape,
-              output_dir + "gt_fn", txt_fn, tif_fn,
-              voxel_size=voxel_size, gt=True)
-    write_ctc(rec_track_tp, start_frame, end_frame, shape,
-              output_dir + "rec_tp", txt_fn, tif_fn,
-              voxel_size=voxel_size)
-    write_ctc(rec_track_fp, start_frame, end_frame, shape,
-              output_dir + "rec_fp", txt_fn, tif_fn,
-              voxel_size=voxel_size)
+    create_graph_and_write_ctc(gt_graph, matched_gt_edges, "gt_tp", True)
+    create_graph_and_write_ctc(gt_graph, fn_edges, "gt_fn", True)
+    create_graph_and_write_ctc(gt_graph, None, "gt_is", True, nodes=report.identity_switch_gt_nodes)
+    fn_div_nodes = (report.no_connection_gt_nodes +
+                    report.unconnected_child_gt_nodes +
+                    report.unconnected_parent_gt_nodes)
+    create_graph_and_write_ctc(gt_graph, None, "gt_fn_div", True, nodes=fn_div_nodes)
+    create_graph_and_write_ctc(rec_graph, matched_rec_edges, "rec_tp", False)
+    create_graph_and_write_ctc(rec_graph, fp_edges, "rec_fp", False)
+    create_graph_and_write_ctc(rec_graph, None, "rec_fp_div", False, nodes=report.fp_div_rec_nodes)
 
 
 if __name__ == "__main__":
