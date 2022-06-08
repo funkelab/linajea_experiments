@@ -1,0 +1,236 @@
+[general]
+# error   40
+# warning 30
+# info    20
+# debug   10
+logging = 20
+# debug = false
+# overwrite = false
+db_host = "mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin?replicaSet=rsLinajea"
+setup_dir = "/groups/funke/home/hirschp/linajea_experiments/classifier_setups/setup_class_3XX/experiments/classifier_201121_135156b"
+seed = 42
+
+
+[model]
+path_to_script = "/groups/funke/home/hirschp/linajea_experiments/classifier_setups/setup_class_3XX/mknet.py"
+net_name = "class_net"
+network_type = 'resnet'
+# input_shape = [ 3, 13, 64, 64,]
+# pad_raw = [ 1, 50, 50, 50,]
+input_shape = [ 5, 8, 32, 32,]
+# input_shape = [ 5, 8, 64, 64,]
+# input_shape = [ 5, 8, 32, 32,]
+# input_shape = [ 5, 16, 64, 64,]
+# input_shape = [ 5, 8, 48, 48,]
+# input_shape = [ 7, 8, 32, 32,]
+pad_raw = [ 3, 30, 30, 30,]
+# num_fmaps = 12
+
+# num_fmaps = [8, 16, 32, 64]
+# # num_fmaps = [16, 32, 64, 96]
+# # num_fmaps = [32, 64, 128, 192]
+# # num_fmaps = [64, 128, 256, 384]
+# # fmap_inc_factors = [ 4, 4, 4,]
+# fmap_inc_factors = [ 2, 2, 2, 1,]
+# # downsample_factors = [ [ 1, 2, 2,], [ 1, 2, 2,], [ 1, 1, 1,],]
+# downsample_factors = [ [ 2, 2, 2,], [ 2, 2, 2,], [ 2, 2, 2,], [ 1, 1, 1,],]
+# kernel_sizes = [ [ 3, 3,], [ 3, 3,], [ 3, 3, 3, 3,], [ 3, 3, 3, 3,],]
+# fc_size = 512
+
+
+# efficientnet_size = "B7"
+
+
+# resnet_size = '18'|'34'|'50'|'101
+resnet_size = '18'
+num_blocks = [3, 4, 4]
+use_bottleneck = true
+num_fmaps = [16, 32, 64, 96]
+
+
+activation = "relu"
+padding = "SAME"
+merge_time_voxel_size = 2
+
+use_dropout = false
+use_batchnorm = true
+use_bias = true
+use_global_pool = true
+
+num_classes = 3
+use_conv4d = true
+make_isotropic = true
+classes = [ "daughter", "mother", "normal",]
+class_ids = [ 2, 1, 0,]
+
+# regularizer_weight = 0.00000001
+
+[train]
+path_to_script = "/groups/funke/home/hirschp/linajea_experiments/classifier_setups/setup_class_3XX/train.py"
+use_auto_mixed_precision = true
+use_tf_data = false
+val_log_step = 10
+batch_size = 32
+cache_size = 256
+max_iterations = 2000
+checkpoint_stride = 1000
+snapshot_stride = 250
+profiling_stride = 500
+
+# use_database = false
+[train.job]
+num_workers = 1
+queue = 'gpu_tesla'
+
+
+[optimizerTF1]
+# optimizer = "GradientDescentOptimizer"
+# optimizer = "MomentumOptimizer"
+optimizer = "AdamOptimizer"
+[optimizerTF1.args]
+learning_rate = 0.0005
+# momentum = 0.9
+[optimizerTF1.kwargs]
+beta1 = 0.95
+beta2 = 0.999
+epsilon = 1e-8
+
+[evaluate]
+max_samples = 200000
+metric = "AP"
+# use_database = true
+one_off = false
+# distance_limit = 11 # matching threshold
+prob_threshold = 0.99
+dry_run = false
+# masked = false
+find_fn = false
+# max_frame = 50
+[evaluate.parameters.matching_threshold]
+50 = 22
+1000 = 11
+[evaluate.parameters.roi]
+offset = [0, 0, 0, 0]
+shape = [200, 385, 512, 712]
+
+
+[train_data]
+use_database = false
+[train_data.roi]
+offset = [0, 0, 0, 0]
+shape = [200, 385, 512, 712]
+# if use_database = true:
+[train_data.db_meta_info]
+setup_dir = "some_setup_name"
+checkpoint = 400000
+cell_score_threshold = 0.3
+# or data_source specific db_name
+[[train_data.data_sources]]
+# db_name = "db_name_str_A"
+[train_data.data_sources.datafile]
+filename = '/nrs/funke/hirschp/Fluo-N3DH-CE/Fluo-N3DH-CE_01'
+group='volumes/raw_nested'
+
+
+[test_data]
+use_database = false
+checkpoint = 15000
+prob_threshold = 0.9
+skip_predict = true
+[test_data.roi]
+offset = [0, 0, 0, 0]
+shape = [200, 385, 512, 712]
+# if use_database = true:
+[test_data.db_meta_info]
+checkpoint = 600000
+cell_score_threshold = 0.3001
+setup_dir = "ctc_44"
+voxel_size = [1, 5, 1, 1,]
+# or data_source specific db_name
+[[test_data.data_sources]]
+[test_data.data_sources.datafile]
+filename = "/nrs/funke/hirschp/Fluo-N3DH-CE_test/Fluo-N3DH-CE_test_01"
+group = 'volumes/raw_nested'
+[[test_data.data_sources]]
+[test_data.data_sources.datafile]
+filename = "/nrs/funke/hirschp/Fluo-N3DH-CE_test/Fluo-N3DH-CE_test_02"
+group = 'volumes/raw_nested'
+
+
+[validate_data]
+use_database = true
+prob_thresholds = [ 0.9,]
+checkpoints = [ 15000]
+skip_predict = true
+[validate_data.roi]
+offset = [0, 0, 0, 0]
+shape = [200, 385, 512, 712]
+# if use_database = true:
+[validate_data.db_meta_info]
+checkpoint = 400000
+cell_score_threshold = 0.2
+setup_dir = "ctc_78"
+voxel_size = [1, 5, 1, 1,]
+# or data_source specific db_name
+[[validate_data.data_sources]]
+# db_name = "db_name_strA"
+[validate_data.data_sources.datafile]
+filename = '/nrs/funke/hirschp/Fluo-N3DH-CE/Fluo-N3DH-CE_02'
+group = 'volumes/raw_nested'
+
+
+[predict]
+path_to_script = "/groups/funke/home/hirschp/linajea_experiments/classifier_setups/setup_class_3XX/predict.py"
+batch_size = 64
+max_samples = 200000
+prefix = "201121_135156/test/15000_"
+[predict.job]
+num_workers = 16
+queue = 'gpu_rtx'
+
+
+[train.augment]
+min_key = "min"
+# min_key = "perc0_01"
+max_key = "max"
+# # max_key = "perc99_99"
+# norm_min = 0
+# norm_max = 255
+
+[train.augment.elastic]
+# control_point_spacing = [ 2, 10, 10,]
+control_point_spacing = [ 5, 25, 25,]
+jitter_sigma = [ 1, 1, 1,]
+# jitter_sigma = [ 0.1, 0.1, 0.1,]
+# jitter_sigma = [ 2, 2, 2,]
+rotation_min = -10
+rotation_max = 10
+subsample = 4
+
+# [train.augment.intensity]
+# scale = [0.6, 1.4]
+# shift = [-0.3, 0.3]
+
+[train.augment.intensity]
+scale = [0.8, 1.2]
+shift = [-0.005, 0.005]
+
+# [train.augment.intensity]
+# scale = [0.9, 1.1]
+# shift = [-0.001, 0.001]
+
+[train.augment.simple]
+# mirror = [1, 2, 3]
+mirror = [2, 3]
+transpose = [2, 3]
+
+[train.augment.noise_gaussian]
+var = [0.2]
+
+[train.augment.noise_saltpepper]
+amount = [0.001]
+
+[train.augment.jitter]
+# jitter = [ 0, 2, 7, 7,]
+jitter = [ 0, 1, 5, 5,]
+# jitter = [ 0, 1, 3, 3,]

@@ -1,0 +1,200 @@
+[general]
+# error   40
+# warning 30
+# info    20
+# debug   10
+logging = 20
+debug = false
+overwrite = false
+db_host = "mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin?replicaSet=rsLinajea"
+# singularity_image = "linajea/linajea:v1.1"
+# host = "c04u36"
+queue = "slowpoke"
+seed = 42
+
+[data]
+# use absolute paths
+train_data_dirs = [
+                  '/nrs/funke/hirschp/mskcc_emb'
+                  # '/nrs/funke/hirschp/mskcc_emb1'
+                ]
+val_data_dirs = [
+                # '/nrs/funke/hirschp/mskcc_emb'
+                '/nrs/funke/hirschp/mskcc_emb1'
+               ]
+test_data_dirs = [
+                 # '/nrs/funke/hirschp/mskcc_emb'
+                 '/nrs/funke/hirschp/mskcc_emb1'
+               ]
+# train_data_dirs = [
+#                 '/nrs/funke/hirschp/cell_data/WT-EMB01-EMB06WT-EMB03-EMB05',
+#                 '/nrs/funke/hirschp/cell_data/WT-EMB01-EMB06WT-EMB06',
+#                 '/nrs/funke/hirschp/cell_data/WT-EMB07-EMB11WT-EMB09-EMB10',
+#                 '/nrs/funke/hirschp/cell_data/WT-EMB12-EMB16WT-EMB12-EMB13',
+#                 '/nrs/funke/hirschp/cell_data/WT-EMB12-EMB16WT-EMB14-EMB16',
+#                 '/nrs/funke/hirschp/cell_data/WT-EMB17-EMB21WT-EMB20-EMB21',
+#                 '/nrs/funke/hirschp/cell_data/WT-EMB22-EMB27WT-EMB22',
+#                 '/nrs/funke/hirschp/cell_data/WT-EMB22-EMB27WT-EMB25-EMB27',
+#                 '/nrs/funke/hirschp/cell_data/WT-EMB28WT-EMB28',
+#                 ]
+# val_data_dirs = [
+#               '/nrs/funke/hirschp/cell_data/WT-EMB17-EMB21WT-EMB17',
+#               '/nrs/funke/hirschp/cell_data/WT-EMB22-EMB27WT-EMB23-EMB24',
+#               ]
+# test_data_dirs = [
+#                '/nrs/funke/hirschp/cell_data/WT-EMB01-EMB06WT-EMB01-EMB02',
+#                '/nrs/funke/hirschp/cell_data/WT-EMB07-EMB11WT-EMB07-EMB08',
+#                '/nrs/funke/hirschp/cell_data/WT-EMB07-EMB11WT-EMB11',
+#                '/nrs/funke/hirschp/cell_data/WT-EMB17-EMB21WT-EMB18-EMB19',
+#                ]
+raw_key = "volumes/raw_smaller_chunks64_nested"
+# min_key = "min"
+min_key = "perc0_01"
+# max_key = "max"
+max_key = "perc99_99"
+norm_min = 2000
+norm_max = 7500
+input_format = "zarr"
+voxel_size = [ 1, 5, 1, 1,]
+classes = [ "daughter", "mother", "normal",]
+class_ids = [ 2, 1, 0,]
+
+[model]
+net_name = "class_net"
+# input_shape = [ 3, 13, 64, 64,]
+# pad_raw = [ 1, 50, 50, 50,]
+# input_shape = [ 3, 8, 32, 32,]
+input_shape = [ 3, 8, 64, 64,]
+# input_shape = [ 5, 8, 32, 32,]
+# input_shape = [ 5, 16, 64, 64,]
+# input_shape = [ 5, 8, 48, 48,]
+# input_shape = [ 7, 8, 32, 32,]
+pad_raw = [ 3, 30, 30, 30,]
+# num_fmaps = 12
+# num_fmaps = [16, 32, 64, 96]
+num_fmaps = [32, 64, 128, 192]
+# num_fmaps = [64, 128, 256, 384]
+# fmap_inc_factors = [ 4, 4, 4,]
+fmap_inc_factors = [ 2, 2, 2, 1,]
+# downsample_factors = [ [ 1, 2, 2,], [ 1, 2, 2,], [ 1, 1, 1,],]
+downsample_factors = [ [ 2, 2, 2,], [ 2, 2, 2,], [ 2, 2, 2,], [ 1, 1, 1,],]
+use_resnet = true
+use_efficientnet = false
+# efficientnet_size = "B4"
+# resnet_size = '18'|'34'|'50'|'101
+resnet_size = '18'
+num_blocks = [3, 4, 4]
+use_bottleneck = true
+activation = "relu"
+padding = "SAME"
+merge_time_voxel_size = 2
+# padding = "same"
+# kernel_sizes = [ [ 3, 3,], [ 3, 3,], [ 3, 3,],]
+kernel_sizes = [ [ 3, 3,], [ 3, 3,], [ 3, 3, 3, 3,], [ 3, 3, 3, 3,],]
+dropout = false
+use_batchnorm = true
+use_bias = true
+global_pool = true
+fc_size = 512
+num_classes = 3
+use_conv4d = true
+make_iso = true
+batch_size = 64
+num_gpus = 1
+num_workers = 5
+cache_size = 1024
+max_iterations = 5000
+checkpoints = 1000
+snapshots = 250
+profiling = 500
+# regularizer_weight = 0.001
+
+[optimizer]
+# optimizer = "GradientDescentOptimizer"
+# optimizer = "MomentumOptimizer"
+optimizer = "AdamOptimizer"
+[optimizer.args]
+learning_rate = 0.0005
+# momentum = 0.9
+[optimizer.kwargs]
+beta1 = 0.95
+beta2 = 0.999
+epsilon = 1e-8
+
+[training]
+use_database = false
+auto_mixed_precision = true
+use_tf_data = true
+val_log_step = 10
+[training.roi]
+offset = [0, 0, 0, 0]
+shape = [200, 205, 512, 512]
+
+# if use_database = true:
+[training.linajea_config.general]
+setup_dir = "/path/to/setup"
+
+[training.linajea_config.prediction]
+iteration = 400000
+cell_score_threshold = 0.3
+
+[postprocessing]
+cell_score_threshold = 0.3
+[postprocessing.roi]
+offset = [0, 0, 0, 0]
+shape = [200, 205, 512, 512]
+
+# if evaluation/predicition.use_database = true:
+[postprocessing.linajea_config.general]
+setup_dir = "setup311_simple_aniso"
+
+[postprocessing.linajea_config.prediction]
+iteration = 400000
+cell_score_threshold = 0.3
+
+[evaluation]
+max_samples = 200000
+metric = "AP"
+use_database = false
+one_off = false
+distance_limit = 11
+prob_threshold = 0.99
+dry_run = true
+masked = false
+find_fn = false
+# max_frame = 50
+[evaluation.roi]
+offset = [0, 0, 0, 0]
+shape = [200, 205, 512, 512]
+
+
+[validation]
+params_product = []
+params_zip = [ "prob_threshold",]
+prob_threshold = [ 0.1, 0.5, 0.75, 0.9, 0.99,]
+checkpoints = [ 1000, 3000, 5000,]
+
+[prediction]
+use_database = false
+batch_size = 64
+
+[training.augmentation]
+[training.augmentation.elastic]
+control_point_spacing = [ 2, 10, 10,]
+jitter_sigma = [ 1, 1, 1,]
+rotation_min = -45
+rotation_max = 45
+subsample = 4
+
+[training.augmentation.intensity]
+scale = [ 0.9, 1.1,]
+shift = [ -0.1, 0.1,]
+
+[training.augmentation.simple]
+mirror = [ 1, 2, 3,]
+transpose = [ 2, 3,]
+
+[training.augmentation.jitter]
+# jitter = [ 0, 2, 7, 7,]
+jitter = [ 0, 1, 5, 5,]
+# jitter = [ 0, 1, 3, 3,]
