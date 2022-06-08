@@ -29,10 +29,11 @@ if __name__ == "__main__":
     parser.add_argument('--db_host', type=str,
                         default="mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin?replicaSet=rsLinajea",
                         help='db host')
+    parser.add_argument('--cost', type=str, default=None,
+                        help='cost')
     args = parser.parse_args()
 
 
-    # simple ILP to chose exactly one indiciator variable
 
     features = np.loadtxt("features.txt").T
     logger.info("features %s", features.shape)
@@ -70,8 +71,18 @@ if __name__ == "__main__":
             constraints.add(cnstr)
     logger.info("constraints %s", cnt_cnstr)
 
+    # assert args.cost in [None, "h", "wh_fp", "wh_fn"]
+
+    indicators = {}
+    if args.cost is not None:
+        with open("indicators.txt", 'r') as f:
+            for i, ln in enumerate(f):
+                indicators[i] = ln.strip()
+        logger.info("indicators %s", len(indicators))
+
     logger.info("setting up")
-    loss = ssvm.SoftMarginLoss(constraints, features, best_effort)
+    loss = ssvm.SoftMarginLoss(constraints, features, best_effort,
+                               indicators=indicators, costs=args.cost)
     bundle_method = ssvm.BundleMethod(
         loss.value_and_gradient,
         dims=num_features,
