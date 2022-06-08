@@ -1,0 +1,283 @@
+[general]
+logging = 20
+db_host = "mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin?replicaSet=rsLinajea"
+seed = 42
+sparse = false
+setup_dir = "/groups/funke/home/hirschp/linajea_experiments/unet_setups/celegans_setups/experiments/ls_38_emb3_le_9"
+
+[model]
+train_input_shape = [ 7, 148, 148, 148,]
+predict_input_shape = [ 7, 260, 260, 260,]
+# num_fmaps = 4
+# fmap_inc_factors = 8
+unet_style = "split"
+num_fmaps = [12, 12]
+fmap_inc_factors = 4
+downsample_factors = [[ 2, 2, 2,],
+                      [ 2, 2, 2,],
+                      [ 2, 2, 2,],]
+kernel_size_down = [[ [3, 3, 3, 3], [3, 3, 3, 3],],
+                    [ [3, 3, 3, 3], [3, 3, 3],],
+                    [ [3, 3, 3], [3, 3, 3],],
+                    [ [3, 3, 3], [3, 3, 3],],]
+kernel_size_up = [[ [3, 3, 3], [3, 3, 3],],
+                  [ [3, 3, 3], [3, 3, 3],],
+                  [ [3, 3, 3], [3, 3, 3],],]
+# constant_upsample = true
+# upsampling = "pixel_shuffle"
+# upsampling = "trilinear"
+# upsampling = "sep_transposed_conv"
+upsampling = "transposed_conv"
+average_vectors = false
+# nms_window_shape = [ 11, 11, 11,]
+nms_window_shape = [ 9, 9, 9,]
+path_to_script = "/groups/funke/home/hirschp/linajea_experiments/unet_setups/celegans_setups/mknet_celegans.py"
+cell_indicator_weighted = 0.000001
+cell_indicator_cutoff = 0.01
+# cell_indicator_weighted = true
+latent_temp_conv = false
+train_only_cell_indicator = false
+
+
+[train]
+val_log_step = 25
+# radius for binary map -> *2 (in world units)
+# in which to draw parent vectors (not used if use_radius)
+parent_radius = [ 0.1, 8.0, 8.0, 8.0,]
+# sigma for Gauss -> ~*4 (5 in z -> in 3 slices) (not used if use_radius)
+rasterize_radius = [ 0.1, 3.0, 3.0, 3.0,]
+# upper bound for dist cell moved between two frames (needed for context)
+move_radius = 25
+cache_size = 48
+use_radius = true
+parent_vectors_loss_transition_offset = 20000
+parent_vectors_loss_transition_factor = 0.001
+path_to_script = "/groups/funke/home/hirschp/linajea_experiments/unet_setups/celegans_setups/train_val_celegans_torch.py"
+max_iterations = 400002
+checkpoint_stride = 10000
+snapshot_stride = 500
+profiling_stride = 1000
+use_auto_mixed_precision = true
+use_swa = true
+swa_every_it = false
+swa_start_it = 49999
+swa_freq_it = 1000
+use_grad_norm = false
+
+[optimizerTorch]
+optimizer = "Adam"
+
+[extract]
+block_size = [ 5, 512, 512, 512,]
+
+[solve]
+from_scratch = true
+non_minimal = false
+write_struct_svm = false
+check_node_close_to_roi = false
+add_node_density_constraints = false
+
+[[solve.parameters]]
+weight_node_score =   -16.786125363574673        
+selection_constant =  8.893522542354866  
+track_cost =          20.675083335777686 
+# disappear cost      -0.0               
+weight_division =     -8.260920358667896 
+division_constant =   5.9535746121046165 
+weight_child =        1.003401421433546  
+weight_continuation = -1.0264581546174496
+weight_edge_score =   0.4254227576366175   
+
+# cell_cycle_key = '/test/10000_'
+block_size = [15, 512, 512, 712]
+context = [2, 100, 100, 100]
+
+
+
+[solve.parameters_search_random]
+
+weight_node_score =   [-6, 3]
+selection_constant =  [-7, 0]
+track_cost =          [5, 11]
+# disappear cost      -0.0               
+weight_division =     [-18, -8]
+division_constant =   [5, 12]
+weight_child =        [0.5, 2.5]
+weight_continuation = [-2, -1]
+weight_edge_score =   [0.25, 0.6]
+
+val = [true]
+# cell_cycle_key = ['emb1_3_40_swa/test/40000_']
+block_size = [[15, 512, 512, 712]]
+context = [[2, 100, 100, 100]]
+num_configs = 25
+
+[solve.parameters_search_grid]
+weight_node_score =   [-13, -17, -21]
+selection_constant =  [6, 9, 12]
+track_cost =          [7,]
+weight_division =     [-8, -11]
+division_constant =   [6.0, 2.5]
+weight_child =        [1.0, 2.0]
+weight_continuation = [-1.0]
+weight_edge_score =   [0.35]
+
+val = [true]
+# cell_cycle_key = ['emb1_3_40_swa/test/40000_']
+block_size = [[15, 512, 512, 712]]
+context = [[2, 100, 100, 100]]
+num_configs = 25
+
+[evaluate]
+from_scratch = false
+
+[predict]
+path_to_script = "/groups/funke/home/hirschp/linajea_experiments/unet_setups/celegans_setups/predict_celegans_torch.py"
+path_to_script_db_from_zarr = "/groups/funke/home/hirschp/linajea_experiments/unet_setups/celegans_setups/write_cells_celegans.py"
+output_zarr_prefix = "/nrs/funke/hirschp/linajea_experiments"
+write_to_zarr = true
+write_to_db = true
+write_db_from_zarr = false
+processes_per_worker = 3
+
+[train_data]
+voxel_size = [ 1, 1, 1, 1,]
+[[train_data.data_sources]]
+gt_db_name = "linajea_celegans_ls_emb3_fixed"
+gt_db_name_polar = "linajea_celegans_mskcc_ls_emb3_polar"
+
+[train_data.data_sources.datafile]
+filename = "/nrs/funke/hirschp/mskcc_lightsheet/mskcc_lightsheet_emb3"
+group = "volumes/raw_nested"
+
+[test_data]
+checkpoint = 400000
+cell_score_threshold = 0.2
+voxel_size = [ 1, 1, 1, 1,]
+[[test_data.data_sources]]
+gt_db_name = "linajea_celegans_ls_emb1_fixed"
+gt_db_name_polar = "linajea_celegans_mskcc_ls_emb1_polar"
+
+[test_data.data_sources.datafile]
+filename = "/nrs/funke/hirschp/mskcc_lightsheet/mskcc_lightsheet_emb1"
+group = "volumes/raw_nested"
+
+[validate_data]
+checkpoints = [ 400000,]
+cell_score_threshold = 0.2
+voxel_size = [ 1, 1, 1, 1,]
+[[validate_data.data_sources]]
+gt_db_name = "linajea_celegans_ls_emb2_fixed"
+gt_db_name_polar = "linajea_celegans_mskcc_ls_emb2_polar"
+
+[validate_data.data_sources.datafile]
+filename = "/nrs/funke/hirschp/mskcc_lightsheet/mskcc_lightsheet_emb2"
+group = "volumes/raw_nested"
+
+# [train.use_radius]
+# 30 = 18
+# 60 = 15
+# 110 = 13
+# 150 = 9
+# 1000 = 6
+
+[train.job]
+num_workers = 24
+queue = "gpu_tesla"
+
+[train.augment]
+divisions = true
+reject_empty_prob = 0.9
+# perc_min = "perc0_01"
+# perc_max = "perc99_99"
+# norm_bounds = [ 2000, 7500,]
+point_balance_radius = 70
+
+[optimizerTorch.kwargs]
+lr = 5e-5
+betas = [0.95, 0.999]
+eps = 1e-8
+
+[extract.edge_move_threshold]
+50 = 45
+1000 = 35
+
+[extract.job]
+num_workers = 16
+queue = "local"
+
+[solve.job]
+num_workers = 4
+queue = "local"
+
+[evaluate.parameters]
+matching_threshold = 15
+sparse = false
+filter_polar_bodies = false
+# [evaluate.parameters.roi]
+# offset = [ 0, 0, 0, 0,]
+# shape = [ 270, 512, 512, 512,]
+# shape = [ 200, 512, 512, 512,]
+
+[evaluate.job]
+num_workers = 1
+queue = "local"
+
+[predict.job]
+num_workers = 4
+queue = "gpu_tesla"
+
+[train_data.roi]
+offset = [ 0, 0, 0, 0,]
+shape = [ 270, 512, 512, 512,]
+
+[test_data.roi]
+offset = [ 0, 0, 0, 0,]
+shape = [ 270, 512, 512, 512,]
+
+[validate_data.roi]
+offset = [ 0, 0, 0, 0,]
+shape = [ 270, 512, 512, 512,]
+
+[train.augment.elastic]
+control_point_spacing = [ 15, 15, 15,]
+jitter_sigma = [ 1, 1, 1,]
+# jitter_sigma = [ 0, 0, 0,]
+rotation_min = -45
+rotation_max = 45
+rotation_3d = false
+subsample = 4
+use_fast_points_transform = true
+
+[train.augment.zoom]
+factor_min = 0.85
+factor_max = 1.25
+spatial_dims = 3
+
+[train.augment.shift]
+prob_slip = 0.2
+prob_shift = 0.2
+sigma = [ 0, 4, 4, 4,]
+
+[train.augment.intensity]
+scale = [ 0.9, 1.1,]
+shift = [ -0.001, 0.001,]
+
+[train.augment.simple]
+mirror = [ 1, 2, 3,]
+transpose = [ 1, 2, 3,]
+
+#[train.augment.noise_saltpepper]
+#amount = [ 0.0001,]
+
+#[train.augment.noise_speckle]
+#var = [ 0.05,]
+
+#[train.augment.histogram]
+#range_low = 0.1
+#range_high = 1.0
+
+
+# [train.augment.noise_gaussian]
+# var = [ 0.001,]
+

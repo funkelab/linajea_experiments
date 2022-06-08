@@ -1,0 +1,223 @@
+[general]
+logging = 20
+db_host = "mongodb://linajeaAdmin:FeOOHnH2O@funke-mongodb4/admin?replicaSet=rsLinajea"
+seed = 42
+setup_dir = "/groups/funke/home/hirschp/linajea_experiments/unet_setups/celegans_setups/mskc_emb_8"
+sparse = false
+
+[model]
+train_input_shape = [ 7, 40, 148, 148,]
+predict_input_shape = [ 7, 80, 260, 260,]
+num_fmaps = 12
+fmap_inc_factors = 3
+downsample_factors = [ [ 1, 2, 2,], [ 1, 2, 2,], [ 2, 2, 2,],]
+kernel_size_down = [ [ 3, 3,], [ 3, 3,], [ 3, 3,], [ 3, 3,],]
+kernel_size_up = [ [ 3, 3,], [ 3, 3,], [ 3, 3,],]
+constant_upsample = true
+average_vectors = false
+nms_window_shape = [ 5, 15, 15,]
+nms_window_shape_test = [ 3, 7, 7,]
+path_to_script = "/groups/funke/home/hirschp/linajea_experiments/unet_setups/celegans_setups/mknet_celegans.py"
+
+[train]
+val_log_step = 10
+parent_radius = [ 0.1, 8.0, 8.0, 8.0,]
+rasterize_radius = [ 0.1, 5.0, 3.0, 3.0,]
+cache_size = 10
+parent_vectors_loss_transition = 50000
+use_radius = true
+path_to_script = "/groups/funke/home/hirschp/linajea_experiments/unet_setups/celegans_setups/train_val_celegans.py"
+max_iterations = 5000
+checkpoint_stride = 10000
+snapshot_stride = 200
+profiling_stride = 100
+
+[optimizerTF1]
+optimizer = "AdamOptimizer"
+
+[extract]
+block_size = [ 5, 512, 512, 512,]
+
+[solve]
+from_scratch = true
+non_minimal = false
+greedy = true
+write_struct_svm = "ssvm_ckpt_240000"
+check_node_close_to_roi = false
+add_node_density_constraints = false
+# [solve.add_node_density_constraints]
+# 30 = 13
+# 60 = 11
+# 10000 = 7
+
+
+[[solve.parameters]]
+# # # ssvm 240k w class id 507 (wo class )
+weight_node_score =   -16.786125363574673        
+selection_constant =  8.893522542354866  
+track_cost =          20.675083335777686 
+# disappear cost      -0.0               
+weight_division =     -8.260920358667896 
+division_constant =   5.9535746121046165 
+weight_child =        1.003401421433546  
+weight_continuation = -1.0264581546174496
+weight_edge_score =   0.4254227576366175   
+
+cell_cycle_key = '201112_063001/test/10000_'
+block_size = [15, 512, 512, 712]
+context = [2, 100, 100, 100]
+
+
+
+# [solve.parameters_search]
+
+# weight_node_score =   [-13, -17, -21]
+# selection_constant =  [6, 9, 12]
+# track_cost =          [7, 11, 15]
+# # disappear cost      -0.0               
+# # weight_division =     [-8, -11, 0]
+# # division_constant =   [6.0, 2.5, 1]
+# # weight_child =        [0.0, 1.0, 2.0]
+# # weight_continuation = [0.0, -1.0]
+# # weight_edge_score =   [0.1, 0.35]
+# weight_division =     [-8, -11]
+# # division_constant =   [6.0, 2.5, 1.0]
+# division_constant =   [6.0, 2.5]
+# weight_child =        [1.0, 2.0]
+# weight_continuation = [-1.0]
+# # weight_edge_score =   [0.1, 0.35]
+# weight_edge_score =   [0.35]
+
+# cell_cycle_key = ['201112_063001/test/10000_', '']
+# cell_cycle_key = ['201112_063001/test/10000_'] #
+
+# block_size = [[15, 512, 512, 712]]
+# context = [[2, 100, 100, 100]]
+# num_random_configs = 50
+# random_search = false
+
+[evaluate]
+from_scratch = false
+
+[predict]
+path_to_script = "/groups/funke/home/hirschp/linajea_experiments/unet_setups/celegans_setups/predict_celegans.py"
+path_to_script_db_from_zarr = "/groups/funke/home/hirschp/linajea_experiments/unet_setups/celegans_setups/write_cells_celegans.py"
+output_zarr_prefix = "/nrs/funke/hirschp/linajea_experiments"
+write_to_zarr = false
+write_to_db = true
+write_db_from_zarr = false
+processes_per_worker = 5
+
+[train_data]
+voxel_size = [ 1, 5, 1, 1,]
+[[train_data.data_sources]]
+gt_db_name = "linajea_celegans_emb_gt_0_370"
+
+[train_data.data_sources.datafile]
+filename = "/nrs/funke/hirschp/mskcc_emb"
+group = "volumes/raw_nested"
+
+[test_data]
+checkpoint = 240000
+cell_score_threshold = 0.2
+voxel_size = [ 1, 5, 1, 1,]
+[[test_data.data_sources]]
+gt_db_name = "linajea_celegans_emb3"
+
+[test_data.data_sources.datafile]
+filename = "/nrs/funke/hirschp/mskcc_emb3"
+group = "volumes/raw_nested"
+
+[validate_data]
+checkpoints = [ 240000,]
+cell_score_threshold = 0.2
+voxel_size = [ 1, 5, 1, 1,]
+[[validate_data.data_sources]]
+gt_db_name = "linajea_celegans_emb1_gt_0_370"
+
+[validate_data.data_sources.datafile]
+filename = "/nrs/funke/hirschp/mskcc_emb1"
+group = "volumes/raw_nested"
+
+[train.job]
+num_workers = 2
+queue = "gpu_rtx"
+
+[train.augment]
+divisions = true
+reject_empty_prob = 0.999
+normalization = "minmax"
+perc_min = "perc0_01"
+perc_max = "perc99_99"
+norm_bounds = [ 2000, 7500,]
+
+[optimizerTF1.args]
+learning_rate = 5e-5
+
+[optimizerTF1.kwargs]
+beta1 = 0.95
+beta2 = 0.999
+epsilon = 1e-8
+
+[extract.edge_move_threshold]
+50 = 45
+1000 = 35
+
+[extract.job]
+num_workers = 32
+queue = "local"
+
+[solve.job]
+num_workers = 14
+queue = "local"
+
+[evaluate.parameters]
+matching_threshold = 15
+sparse = false
+
+[evaluate.job]
+num_workers = 1
+queue = "local"
+
+[predict.job]
+num_workers = 4
+queue = "gpu_tesla"
+
+[train_data.roi]
+offset = [ 0, 0, 0, 0,]
+shape = [ 200, 205, 512, 512,]
+
+[test_data.roi]
+offset = [ 0, 0, 0, 0,]
+shape = [ 200, 205, 512, 512,]
+
+[validate_data.roi]
+offset = [ 0, 0, 0, 0,]
+shape = [ 200, 205, 512, 512,]
+
+# [train.augment.elastic]
+# control_point_spacing = [ 5, 25, 25,]
+# jitter_sigma = [ 1, 1, 1,]
+# rotation_min = -45
+# rotation_max = 45
+# subsample = 4
+# use_fast_points_transform = false
+
+# [train.augment.shift]
+# prob_slip = 0.3
+# prob_shift = 0.3
+# sigma = [ 0, 4, 4, 4,]
+
+# [train.augment.intensity]
+# scale = [ 0.9, 1.1,]
+# shift = [ -0.1, 0.1,]
+
+# [train.augment.simple]
+# mirror = [ 1, 2, 3,]
+# transpose = [ 2, 3,]
+
+# [train.augment.noise_gaussian]
+# var = [ 0.3,]
+
+# [train.augment.noise_saltpepper]
+# amount = [ 0.001,]
