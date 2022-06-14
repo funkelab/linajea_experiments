@@ -5,7 +5,9 @@ import os
 import argparse
 from linajea.gunpowder import WriteCells
 from linajea.process_blockwise import write_done
-from linajea import load_config
+from linajea.config import TrackingConfig
+from linajea import (load_config,
+                     construct_zarr_filename)
 
 try:
     import absl.logging
@@ -22,39 +24,34 @@ logging.getLogger('gunpowder.nodes.hdf5like_source_base')\
     .setLevel(logging.DEBUG)
 
 
-def predict(
-        setup,
-        iteration,
-        sample,
-        data_file,
-        db_host,
-        db_name,
-        score_threshold,
-        data_dir='../01_data',
-        out_file=None,
-        processes_per_worker=5):
+def predict(config):
+    setup_dir = config.general.setup_dir
+    iteration = config.inference.checkpoint
+    data_file = config.inference.data_source.datafile.filename
+    db_host = config.general.db_host
+    db_name = config.inference.data_source.db_name
+    score_threshold = config.inference.cell_score_threshold
+    processes_per_worker = config.predict.processes_per_worker
 
-    setups_dir = os.path.dirname(os.path.realpath(__file__))
-    setup_dir = os.path.join(setups_dir, setup)
-    config = load_config(os.path.join(setup_dir, 'test_net_config.json'))
+    net_config = load_config(os.path.join(config.general.setup_dir,
+                                          'test_net_config.json'))
     # get absolute paths
-    if os.path.isfile(sample) or sample.endswith((".zarr", ".n5")):
-        sample_dir = os.path.abspath(os.path.join(data_dir,
-                                                  os.path.dirname(sample)))
-    else:
-        sample_dir = os.path.abspath(os.path.join(data_dir, sample))
-    attributes = load_config(os.path.join(sample_dir, 'attributes.json'))
+    # if os.path.isfile(sample) or sample.endswith((".zarr", ".n5")):
+    #    sample_dir = os.path.abspath(os.path.join(data_dir,
+    #                                               os.path.dirname(sample)))
+    # else:
+    #    sample_dir = os.path.abspath(os.path.join(data_dir, sample))
+    # attributes = load_config(os.path.join(sample_dir, 'attributes.json'))
 
-    voxel_size = attributes['resolution']
+    voxel_size = gp.Coordinate(config.inference.data_source.voxel_size)
 
     raw = gp.ArrayKey('RAW')
     parent_vectors = gp.ArrayKey('PARENT_VECTORS')
     cell_indicator = gp.ArrayKey('CELL_INDICATOR')
     maxima = gp.ArrayKey('MAXIMA')
 
-    voxel_size = gp.Coordinate(voxel_size)
-    input_size = gp.Coordinate(config['input_shape'])*voxel_size
-    output_size = gp.Coordinate(config['output_shape_2'])*voxel_size
+    input_size = gp.Coordinate(net_config['input_shape'])*voxel_size
+    output_size = gp.Coordinate(net_config['output_shape_2'])*voxel_size
 
     chunk_request = gp.BatchRequest()
     chunk_request.add(raw, input_size)
@@ -63,16 +60,9 @@ def predict(
     chunk_request.add(maxima, output_size)
 
     if data_file.endswith(".zarr") or data_file.endswith(".n5"):
-        logging.info(
-            os.path.join(
-                data_dir,
-                str(sample),
-                data_file))
+        logging.info(data_file)
         source = gp.ZarrSource(
-            os.path.join(
-                data_dir,
-                str(sample),
-                data_file),
+            data_file,
             {raw: 'raw'},
             array_specs={
                 raw: gp.ArraySpec(
@@ -80,10 +70,7 @@ def predict(
                     voxel_size=voxel_size)})
     elif data_file.endswith(".klb"):
         source = gp.KlbSource(
-                os.path.join(
-                    data_dir,
-                    str(sample),
-                    data_file),
+                data_file,
                 raw,
                 gp.ArraySpec(
                     interpolatable=True,
@@ -103,12 +90,12 @@ def predict(
             os.path.join(setup_dir, 'train_net_checkpoint_%d' % iteration),
             graph=os.path.join(setup_dir, 'test_net.meta'),
             inputs={
-                config['raw']: raw,
+                net_config['raw']: raw,
             },
             outputs={
-                config['parent_vectors_cropped']: parent_vectors,
-                config['cell_indicator_cropped']: cell_indicator,
-                config['maxima']: maxima,
+                net_config['parent_vectors_cropped']: parent_vectors,
+                net_config['cell_indicator_cropped']: cell_indicator,
+                net_config['maxima']: maxima,
             },
             array_specs={
                 parent_vectors: gp.ArraySpec(
@@ -129,7 +116,9 @@ def predict(
             },
             skip_empty=True
         ))
-    if out_file:
+    if config.predict.write_to_zarr:
+        out_file = construct_zarr_filename(config, data_file,
+                                           config.inference.checkpoint)
         pipeline = (
             pipeline +
 
@@ -138,7 +127,7 @@ def predict(
                     parent_vectors: 'volumes/parent_vectors',
                     cell_indicator: 'volumes/cell_indicator'
                     },
-                output_filename=os.path.join(setup_dir, out_file)))
+                output_filename=out_file))
 
     pipeline = (
         pipeline +
@@ -178,35 +167,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str,
                         help='path to config file')
-    parser.add_argument('--iteration', type=int,
-                        help='which saved model to use for prediction')
     args = parser.parse_args()
 
-    config = load_config(args.config)
-
-    iteration = args.iteration
-    setup = config['general']['setup']
-    sample = config['general']['sample']
-    db_host = config['general']['db_host']
-    db_name = config['general']['db_name']
-    score_threshold = config['predict']['cell_score_threshold']
-    data_dir = config['general']['data_dir']\
-        if 'data_dir' in config['general'] else '../data'
-    data_file = config['general']['data_file']\
-        if 'data_file' in config['general'] else sample + '.n5'
-    prediction_zarr_file = config['predict']['output_zarr']\
-        if 'output_zarr' in config['predict'] else None
-    processes_per_worker = config['predict']['processes_per_worker']\
-        if 'processes_per_worker' in config['predict'] else 5
-
-    predict(
-        setup,
-        iteration,
-        sample,
-        data_file,
-        db_host,
-        db_name,
-        score_threshold,
-        data_dir=data_dir,
-        out_file=prediction_zarr_file,
-        processes_per_worker=processes_per_worker)
+    config = TrackingConfig.from_file(args.config)
+    predict(config)
