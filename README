@@ -11,6 +11,8 @@ Versions of libraries used to run experiments in Nature Biotech paper:
     singularity containers on /nrs - linajea:v1.3-dev, based on pylb-base:v1.3-dev-updated
 See singularity recipes in linajea/singularity/Singularity and linajea/singularity/pylp_base/Singularity at the v1.3 release of the linajea repository for versions of all other dependencies.
 
+The config files in run_script/config_files contain the best parameters obtained from the grid search and used in the Nature Biotech paper.
+
 Here is an overview of this experiments repository by directory - most directories have their own,
 more detailed README for more information:
 

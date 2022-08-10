@@ -1,5 +1,7 @@
 Record keeping for corrections I (Caroline) made to extended tracks on 7.23.19
 
+FINAL TRACKS are at extended_tracks_add_missing_edges.txt (symlinked to tracks.txt)
+
 1) Error detected by collect_tracks
 When I ran collect_tracks.py on the new extended ground truth, I got the following warning:
 "track does not form a tree in time, cell 329 has (at least) parents 332 and 330"

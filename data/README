@@ -49,7 +49,7 @@ division_tracks.txt and daugher_cells.txt in the tracks folder.
 
 DATA MANIPULATION AND PREPROCESSING
 
-There are a number of python scripts in the /linajea_experiments/01_data folder that can
+There are a number of python scripts that can
 be used to preprocess, manipulate, or gather statistics about the data. 
  
 The file "interpolate_and_split_data.py" is the script used to read in an xml file,
