@@ -16,7 +16,6 @@ STANDARD DATA FORMAT
     - daughter_cells_side_2.txt (optional)
     - division_tracks.txt (optional):           include if daughter_cells come from separate track 
                                                 annotations than tracks.txt
-    -> original/                                original annotations from Keller lab in various formats
  -> TGMM/
     -> original/
     -> tgmm.txt
@@ -35,8 +34,7 @@ stored this way to avoid re-computing on the fly.
 
 Track Annotations:
 
-The original annotations as recieved from the Keller lab are in
-/linajea_experiments/01_data/<sample #>/tracks/original/. The data arrived in different
+The annotations arrived in different
 formats for each sample, and different preprocessing was done to clean up and reformat the tracks
 into a tab separated value text file, with columns t, z, y, x, cell_id, parent_id, track_id.
 This text file is stored as tracks.txt in /linajea_experiments/01_data/<sample #>/tracks/ 
